@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FcCameraTypeMapper">
+    
+    <resultMap type="FcCameraType" id="FcCameraTypeResult">
+        <result property="id"    column="id"    />
+        <result property="typename"    column="typeName"    />
+        <result property="isenable"    column="isEnable"    />
+    </resultMap>
+
+    <sql id="selectFcCameraTypeVo">
+        select id, typeName, isEnable from fc_camera_type
+    </sql>
+
+    <select id="selectFcCameraTypeList" parameterType="FcCameraType" resultMap="FcCameraTypeResult">
+        <include refid="selectFcCameraTypeVo"/>
+        <where>  
+            <if test="typename != null  and typename != ''"> and typeName like concat('%', #{typename}, '%')</if>
+            <if test="isenable != null "> and isEnable = #{isenable}</if>
+        </where>
+    </select>
+    
+    <select id="selectFcCameraTypeById" parameterType="Long" resultMap="FcCameraTypeResult">
+        <include refid="selectFcCameraTypeVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertFcCameraType" parameterType="FcCameraType" useGeneratedKeys="true" keyProperty="id">
+        insert into fc_camera_type
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="typename != null">typeName,</if>
+            <if test="isenable != null">isEnable,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="typename != null">#{typename},</if>
+            <if test="isenable != null">#{isenable},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFcCameraType" parameterType="FcCameraType">
+        update fc_camera_type
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="typename != null">typeName = #{typename},</if>
+            <if test="isenable != null">isEnable = #{isenable},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFcCameraTypeById" parameterType="Long">
+        delete from fc_camera_type where id = #{id}
+    </delete>
+
+    <delete id="deleteFcCameraTypeByIds" parameterType="String">
+        delete from fc_camera_type where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

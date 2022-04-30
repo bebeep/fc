@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FcBasetbMapper">
+    
+    <resultMap type="FcBasetb" id="FcBasetbResult">
+        <result property="id"    column="id"    />
+        <result property="linename"    column="lineName"    />
+        <result property="linealias"    column="lineAlias"    />
+        <result property="direct"    column="direct"    />
+        <result property="stn"    column="STN"    />
+        <result property="tunnelname"    column="tunnelName"    />
+        <result property="maoduan"    column="maoduan"    />
+        <result property="pol"    column="pol"    />
+        <result property="realpol"    column="realPol"    />
+        <result property="span"    column="span"    />
+        <result property="spanbywheel"    column="spanByWheel"    />
+        <result property="kmv"    column="kmv"    />
+        <result property="zig"    column="zig"    />
+        <result property="hei"    column="hei"    />
+        <result property="structtype"    column="structType"    />
+        <result property="latitude"    column="latitude"    />
+        <result property="longitude"    column="longitude"    />
+    </resultMap>
+
+    <sql id="selectFcBasetbVo">
+        select id, lineName, lineAlias, direct, STN, tunnelName, maoduan, pol, realPol, span, spanByWheel, kmv, zig, hei, structType, latitude, longitude from fc_basetb
+    </sql>
+
+    <select id="selectFcBasetbList" parameterType="FcBasetb" resultMap="FcBasetbResult">
+        <include refid="selectFcBasetbVo"/>
+        <where>  
+            <if test="linename != null  and linename != ''"> and lineName like concat('%', #{linename}, '%')</if>
+            <if test="linealias != null  and linealias != ''"> and lineAlias = #{linealias}</if>
+            <if test="direct != null  and direct != ''"> and direct = #{direct}</if>
+            <if test="stn != null  and stn != ''"> and STN = #{stn}</if>
+            <if test="tunnelname != null  and tunnelname != ''"> and tunnelName like concat('%', #{tunnelname}, '%')</if>
+            <if test="pol != null  and pol != ''"> and pol = #{pol}</if>
+        </where>
+    </select>
+    
+    <select id="selectFcBasetbById" parameterType="Long" resultMap="FcBasetbResult">
+        <include refid="selectFcBasetbVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertFcBasetb" parameterType="FcBasetb" useGeneratedKeys="true" keyProperty="id">
+        insert into fc_basetb
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="linename != null">lineName,</if>
+            <if test="linealias != null">lineAlias,</if>
+            <if test="direct != null">direct,</if>
+            <if test="stn != null">STN,</if>
+            <if test="tunnelname != null">tunnelName,</if>
+            <if test="maoduan != null">maoduan,</if>
+            <if test="pol != null">pol,</if>
+            <if test="realpol != null">realPol,</if>
+            <if test="span != null">span,</if>
+            <if test="spanbywheel != null">spanByWheel,</if>
+            <if test="kmv != null">kmv,</if>
+            <if test="zig != null">zig,</if>
+            <if test="hei != null">hei,</if>
+            <if test="structtype != null">structType,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="longitude != null">longitude,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="linename != null">#{linename},</if>
+            <if test="linealias != null">#{linealias},</if>
+            <if test="direct != null">#{direct},</if>
+            <if test="stn != null">#{stn},</if>
+            <if test="tunnelname != null">#{tunnelname},</if>
+            <if test="maoduan != null">#{maoduan},</if>
+            <if test="pol != null">#{pol},</if>
+            <if test="realpol != null">#{realpol},</if>
+            <if test="span != null">#{span},</if>
+            <if test="spanbywheel != null">#{spanbywheel},</if>
+            <if test="kmv != null">#{kmv},</if>
+            <if test="zig != null">#{zig},</if>
+            <if test="hei != null">#{hei},</if>
+            <if test="structtype != null">#{structtype},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="longitude != null">#{longitude},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFcBasetb" parameterType="FcBasetb">
+        update fc_basetb
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="linename != null">lineName = #{linename},</if>
+            <if test="linealias != null">lineAlias = #{linealias},</if>
+            <if test="direct != null">direct = #{direct},</if>
+            <if test="stn != null">STN = #{stn},</if>
+            <if test="tunnelname != null">tunnelName = #{tunnelname},</if>
+            <if test="maoduan != null">maoduan = #{maoduan},</if>
+            <if test="pol != null">pol = #{pol},</if>
+            <if test="realpol != null">realPol = #{realpol},</if>
+            <if test="span != null">span = #{span},</if>
+            <if test="spanbywheel != null">spanByWheel = #{spanbywheel},</if>
+            <if test="kmv != null">kmv = #{kmv},</if>
+            <if test="zig != null">zig = #{zig},</if>
+            <if test="hei != null">hei = #{hei},</if>
+            <if test="structtype != null">structType = #{structtype},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFcBasetbById" parameterType="Long">
+        delete from fc_basetb where id = #{id}
+    </delete>
+
+    <delete id="deleteFcBasetbByIds" parameterType="String">
+        delete from fc_basetb where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

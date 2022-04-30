@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FcRecordMapper">
+    
+    <resultMap type="FcRecord" id="FcRecordResult">
+        <result property="id"    column="id"    />
+        <result property="imgkey"    column="imgKey"    />
+        <result property="content"    column="content"    />
+        <result property="taskpath"    column="taskPath"    />
+        <result property="pole"    column="pole"    />
+        <result property="cameraid"    column="cameraId"    />
+        <result property="startx"    column="startX"    />
+        <result property="starty"    column="startY"    />
+        <result property="endx"    column="endX"    />
+        <result property="endy"    column="endY"    />
+        <result property="componentNameId"    column="componentNameId"    />
+        <result property="componentDefectId"    column="componentDefectId"    />
+        <result property="defectTypeId"    column="defectTypeId"    />
+        <result property="defectLevelId"    column="defectLevelId"    />
+    </resultMap>
+
+    <sql id="selectFcRecordVo">
+        select c.id, c.imgKey, c.content, c.taskPath, c.pole, c.cameraId, c.startX, c.startY,
+        c.endX, c.endY,c.componentNameId,c.componentDefectId,c.defectTypeId,c.defectLevelId,
+        (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="component_name" and d.dict_value = c.componentNameId) componentName,
+        (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="component_defect" and d.dict_value = c.componentDefectId) componentDefect,
+        (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="defect_type" and d.dict_value = c.defectTypeId) defectType,
+        (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="defect_level" and d.dict_value = c.defectLevelId) defectLevel
+          from fc_record c
+    </sql>
+
+    <select id="selectFcRecordList" parameterType="FcRecord" resultMap="FcRecordResult">
+        <include refid="selectFcRecordVo"/>
+        <where>  
+            <if test="imgkey != null "> and imgKey = #{imgkey}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="taskpath != null  and taskpath != ''"> and taskPath = #{taskpath}</if>
+            <if test="pole != null  and pole != ''"> and pole = #{pole}</if>
+            <if test="cameraid != null "> and cameraId = #{cameraid}</if>
+            <if test="startx != null "> and startX = #{startx}</if>
+            <if test="starty != null "> and startY = #{starty}</if>
+            <if test="endx != null "> and endX = #{endx}</if>
+            <if test="endy != null "> and endY = #{endy}</if>
+            <if test="componentNameId != null "> and componentNameId = #{componentNameId}</if>
+            <if test="componentDefectId != null "> and componentDefectId = #{componentDefectId}</if>
+            <if test="defectTypeId != null "> and defectTypeId = #{defectTypeId}</if>
+            <if test="defectLevelId != null "> and defectLevelId = #{defectLevelId}</if>
+        </where>
+    </select>
+    
+    <select id="selectFcRecordById" parameterType="Integer" resultMap="FcRecordResult">
+        <include refid="selectFcRecordVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertFcRecord" parameterType="FcRecord" useGeneratedKeys="true" keyProperty="id">
+        insert into fc_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="imgkey != null">imgKey,</if>
+            <if test="content != null">content,</if>
+            <if test="taskpath != null">taskPath,</if>
+            <if test="pole != null">pole,</if>
+            <if test="cameraid != null">cameraId,</if>
+            <if test="startx != null">startX,</if>
+            <if test="starty != null">startY,</if>
+            <if test="endx != null">endX,</if>
+            <if test="endy != null">endY,</if>
+            <if test="componentNameId != null">componentNameId,</if>
+            <if test="componentDefectId != null">componentDefectId,</if>
+            <if test="defectTypeId != null">defectTypeId,</if>
+            <if test="defectLevelId != null">defectLevelId,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="imgkey != null">#{imgkey},</if>
+            <if test="content != null">#{content},</if>
+            <if test="taskpath != null">#{taskpath},</if>
+            <if test="pole != null">#{pole},</if>
+            <if test="cameraid != null">#{cameraid},</if>
+            <if test="startx != null">#{startx},</if>
+            <if test="starty != null">#{starty},</if>
+            <if test="endx != null">#{endx},</if>
+            <if test="endy != null">#{endy},</if>
+            <if test="componentNameId != null">#{componentNameId},</if>
+            <if test="componentDefectId != null">#{componentDefectId},</if>
+            <if test="defectTypeId != null">#{defectTypeId},</if>
+            <if test="defectLevelId != null">#{defectLevelId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFcRecord" parameterType="FcRecord">
+        update fc_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="imgkey != null">imgKey = #{imgkey},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="taskpath != null">taskPath = #{taskpath},</if>
+            <if test="pole != null">pole = #{pole},</if>
+            <if test="cameraid != null">cameraId = #{cameraid},</if>
+            <if test="startx != null">startX = #{startx},</if>
+            <if test="starty != null">startY = #{starty},</if>
+            <if test="endx != null">endX = #{endx},</if>
+            <if test="endy != null">endY = #{endy},</if>
+            <if test="componentNameId != null ">componentNameId = #{componentNameId},</if>
+            <if test="componentDefectId != null">componentDefectId = #{componentDefectId},</if>
+            <if test="defectTypeId != null">defectTypeId = #{defectTypeId},</if>
+            <if test="defectLevelId != null">defectLevelId = #{defectLevelId},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFcRecordById" parameterType="Integer">
+        delete from fc_record where id = #{id}
+    </delete>
+
+    <delete id="deleteFcRecordByIds" parameterType="String">
+        delete from fc_record where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
