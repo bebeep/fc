@@ -1,6 +1,7 @@
 package com.ruoyi.web.tools;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.web.domain.server.Sys;
 import org.slf4j.Logger;
@@ -200,6 +201,13 @@ public class TaskUtils {
                 imageInfos.add(imageMap);
                 if (id  == endId) break;
             }
+
+            //最后一项
+            map = new HashMap<>();
+            map.put("KMV",lastKMV);
+            map.put("POL",lastRoleName);
+            list.add(map);
+
             ps.close();
             conn.commit();
             conn.close();
@@ -314,6 +322,186 @@ public class TaskUtils {
     }
 
 
+
+    /**
+     * 获取几何数据
+     * @return
+     */
+    public static HashMap getJHdata(String taskPath,int startID,int pageSize){
+        String dbFilePath = getJHPath(taskPath);
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+
+//            String sql = "SELECT Pole,Station,KMV,Hei,Zig,speed from JH_INFO limit "+pageSize * pageNo+","+(pageNo+1) * pageSize+";";
+            String sql = "SELECT ID,Pole,Station,KMV,Hei,Zig,speed,Posi from JH_INFO where ID >"+startID+";";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            List<HashMap> list = new ArrayList<>();
+
+
+            int endID = 0 ;
+            int page = 0;
+            String lastPosi = "";//标志位：JCXP_DROPPER   JXCP_POLE
+            String lastPole = "";//上一个杆号
+
+            double hei = 0; //导高
+            double zig = 0; //拉出值
+            double speed = 0; //速度
+
+            double minHeight = 0; //最小导高
+            double minZig = 0; //最小拉出值
+            double minSpeed = 0; //最小速度
+
+            double maxHeight = 0; //最大导高
+            double maxZig = 0; //最大拉出值
+            double maxSpeed = 0; //最大速度
+
+            List<Double> heightDatas = new ArrayList<>();
+            List<Double> zigDatas = new ArrayList<>();
+            List<Double> speedDatas = new ArrayList<>();
+
+            while ( rs.next() ) {
+                if (rs.getString("posi").isEmpty()) continue;
+
+                //第一个posi
+                if ((rs.getString("posi").equals("JCXP_DROPPER") || rs.getString("posi").equals("JXCP_POLE"))
+                        &&!lastPosi.equals(rs.getString("posi"))){
+                    hei = rs.getDouble("Hei");
+                    zig = rs.getDouble("Zig");
+                    speed = rs.getDouble("Speed");
+                    lastPosi = rs.getString("posi");
+
+                }
+
+                //最后一个Pole
+                if (!lastPole.isEmpty() && !lastPole.equals(rs.getString("Pole"))){
+                    HashMap map = new HashMap();
+                    map.put("pole", lastPole);
+                    map.put("hei", hei);
+                    map.put("zig", zig);
+                    map.put("speed", speed);
+                    map.put("heiDatas", heightDatas);
+                    map.put("zigDatas", zigDatas);
+                    map.put("speedDatas", speedDatas);
+
+                    list.add(map);
+                    page++;
+                    heightDatas = new ArrayList<>();
+                    zigDatas = new ArrayList<>();
+                    speedDatas = new ArrayList<>();
+                    if (page == pageSize) break;
+                }
+
+
+                lastPole = rs.getString("Pole");
+
+
+                double currHei = rs.getDouble("Hei");
+                double currZig = rs.getDouble("Zig");
+                double currSpeed = rs.getDouble("Speed");
+                endID = rs.getInt("ID");
+
+
+                if (minHeight == 0) minHeight = currHei;
+                if (minZig == 0) minZig = currZig;
+                if (minSpeed == 0) minSpeed = currSpeed;
+
+                if (currHei!= 65536) {
+                    minHeight = Math.min(minHeight,currHei);
+                    maxHeight = Math.max(maxHeight,currHei);
+                    heightDatas.add(currHei);
+                }
+
+                if (currZig!= 65536){
+                    zigDatas.add(currZig);
+                    minZig = Math.min(minZig,currZig);
+                    maxZig = Math.max(maxZig,currZig);
+                }
+
+
+                speedDatas.add(currSpeed);
+                minSpeed = Math.min(minSpeed,currSpeed);
+                maxSpeed = Math.max(maxSpeed,currSpeed);
+
+            }
+
+
+
+            ps.close();
+            conn.commit();
+            conn.close();
+            System.out.println("几何数据:"+list.size());
+            System.out.println("最小值:"+minHeight+"|"+minZig+"|"+minSpeed);
+            System.out.println("最大值:"+maxHeight+"|"+maxZig+"|"+maxSpeed);
+            System.out.println("endID:"+endID+"|"+list.size());
+            HashMap map = new HashMap();
+            map.put("data",list);
+            map.put("minHeight",minHeight);
+            map.put("minZig",minZig);
+            map.put("minSpeed",minSpeed);
+            map.put("maxHeight",maxHeight);
+            map.put("maxZig",maxZig);
+            map.put("maxSpeed",maxSpeed);
+            map.put("endID",endID);
+            return map;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return null;
+    }
+
+
+
+
+
+
+    /**
+     * 测试
+     */
+    public static void main(String[] args) throws FileNotFoundException {
+//        getTasksByDate("2022-04-01");
+//        getAllTasks();
+
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
+
+
+//        System.out.println("编码："+enCodeStringToBase64("G:\\fc\\4C\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1"));
+//        System.out.println("解码："+decodeBase64String("RzpcZmNcNENc5aSp56qX5pWw5o2uXDIwMjItMDQtMDFcMjAyMl8wNF8wMV8xNF8wNF8wMV/lj4zpm7fnur9f5Y+M5aKp6ZuG56uZLembt+m6u+W6l+ermV/kuIvooYwx"));
+
+
+//        getAllTasks("2021");
+
+
+//        getRoleInfoByStation(
+//                "D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行",
+//                1,
+//                1662,
+//                0,
+//                20
+//                );
+
+
+//        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L);
+//        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351155801L);
+
+        getJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行",229448,20);
+    }
+
+
+
+
+
     private static String getDbPath(String taskPath){
         File taskFile = new File(taskPath);
         if (!taskFile.exists() || !taskFile.isDirectory() || taskFile.list() == null || taskFile.list().length == 0){
@@ -331,6 +519,19 @@ public class TaskUtils {
         }
         System.out.println("\n数据库文件："+ dbFilePath);
         return dbFilePath;
+    }
+
+
+    private static String getJHPath(String taskPath){
+        File taskFile = new File(taskPath);
+        if (!taskFile.exists() || !taskFile.isDirectory() || taskFile.list() == null || taskFile.list().length == 0){
+            return null;
+        }
+        //DB文件夹
+        File dbFiles = new File(taskFile.getPath()+"\\几何数据\\JCW.db");
+        if (!dbFiles.exists()) return null;
+        System.out.println("\n数据库文件："+ dbFiles.getPath());
+        return dbFiles.getPath();
     }
 
 
@@ -409,45 +610,5 @@ public class TaskUtils {
             return target;
         }
     }
-
-
-
-
-    /**
-     * 测试
-     */
-    public static void main(String[] args) throws FileNotFoundException {
-//        getTasksByDate("2022-04-01");
-//        getAllTasks();
-
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-//        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
-
-
-//        System.out.println("编码："+enCodeStringToBase64("G:\\fc\\4C\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1"));
-//        System.out.println("解码："+decodeBase64String("RzpcZmNcNENc5aSp56qX5pWw5o2uXDIwMjItMDQtMDFcMjAyMl8wNF8wMV8xNF8wNF8wMV/lj4zpm7fnur9f5Y+M5aKp6ZuG56uZLembt+m6u+W6l+ermV/kuIvooYwx"));
-
-
-//        getAllTasks("2021");
-
-
-//        getRoleInfoByStation(
-//                "D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行",
-//                1,
-//                1662,
-//                0,
-//                20
-//                );
-
-
-//        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L);
-//        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351155801L);
-
-    }
-
 
 }

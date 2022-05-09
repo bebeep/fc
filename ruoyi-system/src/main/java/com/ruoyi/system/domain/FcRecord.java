@@ -75,7 +75,34 @@ public class FcRecord extends BaseEntity
     private String componentDefect;
     private String defectType;
     private String defectLevel;
+    private String checkDate;//检测日期
+    private String STN;//站区
+    private Double KMV;//公里标
+    private Long TIM;
 
+    public String getCheckDate() {
+        return checkDate;
+    }
+
+    public void setCheckDate(String checkDate) {
+        this.checkDate = checkDate;
+    }
+
+    public String getSTN() {
+        return STN;
+    }
+
+    public void setSTN(String STN) {
+        this.STN = STN;
+    }
+
+    public Double getKMV() {
+        return KMV;
+    }
+
+    public void setKMV(Double KMV) {
+        this.KMV = KMV;
+    }
 
     public String getComponentName() {
         return componentName;
@@ -107,6 +134,14 @@ public class FcRecord extends BaseEntity
 
     public void setDefectLevel(String defectLevel) {
         this.defectLevel = defectLevel;
+    }
+
+    public Long getTIM() {
+        return TIM;
+    }
+
+    public void setTIM(Long TIM) {
+        this.TIM = TIM;
     }
 
     public void setId(Integer id)
@@ -254,7 +289,11 @@ public class FcRecord extends BaseEntity
                     Integer componentNameId,
                     Integer componentDefectId,
                     Integer defectTypeId,
-                    Integer defectLevelId
+                    Integer defectLevelId,
+                    String checkDate,
+                    String STN,
+                    double KMV,
+                    Long TIM
 
     ) {
         this.imgkey = imgkey;
@@ -270,6 +309,10 @@ public class FcRecord extends BaseEntity
         this.componentDefectId = componentDefectId;
         this.defectTypeId = defectTypeId;
         this.defectLevelId = defectLevelId;
+        this.checkDate = checkDate;
+        this.STN = STN;
+        this.KMV = KMV;
+        this.TIM = TIM;
     }
 
     @Override

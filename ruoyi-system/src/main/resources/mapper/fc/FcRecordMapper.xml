@@ -19,10 +19,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="componentDefectId"    column="componentDefectId"    />
         <result property="defectTypeId"    column="defectTypeId"    />
         <result property="defectLevelId"    column="defectLevelId"    />
+        <result property="checkDate"    column="checkDate"    />
+        <result property="STN"    column="STN"    />
+        <result property="KMV"    column="KMV"    />
+        <result property="TIM"    column="TIM"    />
     </resultMap>
 
     <sql id="selectFcRecordVo">
-        select c.id, c.imgKey, c.content, c.taskPath, c.pole, c.cameraId, c.startX, c.startY,
+        select c.id, c.imgKey, c.content, c.taskPath, c.pole, c.cameraId, c.startX, c.startY,c.checkDate,c.STN,c.KMV,c.TIM,
         c.endX, c.endY,c.componentNameId,c.componentDefectId,c.defectTypeId,c.defectLevelId,
         (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="component_name" and d.dict_value = c.componentNameId) componentName,
         (SELECT d.dict_label FROM sys_dict_data d WHERE d.dict_type="component_defect" and d.dict_value = c.componentDefectId) componentDefect,
@@ -35,7 +39,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectFcRecordVo"/>
         <where>  
             <if test="imgkey != null "> and imgKey = #{imgkey}</if>
-            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="content != null  and content != ''"> and content like concat('%', #{content}, '%')</if>
             <if test="taskpath != null  and taskpath != ''"> and taskPath = #{taskpath}</if>
             <if test="pole != null  and pole != ''"> and pole = #{pole}</if>
             <if test="cameraid != null "> and cameraId = #{cameraid}</if>
@@ -47,6 +51,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="componentDefectId != null "> and componentDefectId = #{componentDefectId}</if>
             <if test="defectTypeId != null "> and defectTypeId = #{defectTypeId}</if>
             <if test="defectLevelId != null "> and defectLevelId = #{defectLevelId}</if>
+            <if test="checkDate != null "> and checkDate = #{checkDate}</if>
+            <if test="STN != null "> and STN = #{STN}</if>
+            <if test="KMV != null "> and KMV = #{KMV}</if>
+            <if test="TIM != null "> and TIM = #{TIM}</if>
         </where>
     </select>
     
@@ -71,6 +79,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="componentDefectId != null">componentDefectId,</if>
             <if test="defectTypeId != null">defectTypeId,</if>
             <if test="defectLevelId != null">defectLevelId,</if>
+            <if test="checkDate != null">checkDate,</if>
+            <if test="STN != null">STN,</if>
+            <if test="KMV != null">KMV,</if>
+            <if test="TIM != null">TIM</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="imgkey != null">#{imgkey},</if>
@@ -86,6 +98,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="componentDefectId != null">#{componentDefectId},</if>
             <if test="defectTypeId != null">#{defectTypeId},</if>
             <if test="defectLevelId != null">#{defectLevelId},</if>
+            <if test="checkDate != null">#{checkDate},</if>
+            <if test="STN != null">#{STN},</if>
+            <if test="KMV != null">#{KMV},</if>
+            <if test="TIM != null">#{TIM}</if>
          </trim>
     </insert>
 
@@ -105,6 +121,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="componentDefectId != null">componentDefectId = #{componentDefectId},</if>
             <if test="defectTypeId != null">defectTypeId = #{defectTypeId},</if>
             <if test="defectLevelId != null">defectLevelId = #{defectLevelId},</if>
+            <if test="checkDate != null">#{checkDate},</if>
+            <if test="STN != null">#{STN},</if>
+            <if test="KMV != null">#{KMV},</if>
+            <if test="TIM != null">TIM = #{TIM}</if>
         </trim>
         where id = #{id}
     </update>
