@@ -121,9 +121,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="componentDefectId != null">componentDefectId = #{componentDefectId},</if>
             <if test="defectTypeId != null">defectTypeId = #{defectTypeId},</if>
             <if test="defectLevelId != null">defectLevelId = #{defectLevelId},</if>
-            <if test="checkDate != null">#{checkDate},</if>
-            <if test="STN != null">#{STN},</if>
-            <if test="KMV != null">#{KMV},</if>
+            <if test="checkDate != null">checkDate = #{checkDate},</if>
+            <if test="STN != null">STN = #{STN},</if>
+            <if test="KMV != null">KMV = #{KMV},</if>
             <if test="TIM != null">TIM = #{TIM}</if>
         </trim>
         where id = #{id}

@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.fc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.annotation.RepeatSubmit;
 import com.ruoyi.common.core.controller.BaseController;
@@ -34,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLDecoder;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -454,6 +455,7 @@ public class ApiController extends BaseController {
             if (result == 1)return new AjaxResult(0,"修改成功","");
             return new AjaxResult(-1,"修改失败","");
         }catch (Exception e){
+            e.printStackTrace();
         }
         return new AjaxResult(-1,"修改失败","");
     }
@@ -578,12 +580,14 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
+//            @ApiImplicitParam(name = "pageNo", value = "当前页码，默认0",  dataType = "Int",  dataTypeClass = Integer.class),
+//            @ApiImplicitParam(name = "pageSize", value = "每页数据条数，默认20",  dataType = "Int",  dataTypeClass = Integer.class),
     })
     @ApiResponse
     @GetMapping("/getDefectInfo")
     @ResponseBody
     public AjaxResult getDefectInfo(String taskPath,String STN,String pole, Integer componentDefectId,
-                                    Integer defectTypeId, Integer defectLevelId,String content) {
+                                    Integer defectTypeId, Integer defectLevelId,String content,int pageNo,int pageSize) {
         if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
         try{
             FcRecord record = new FcRecord();
@@ -605,25 +609,256 @@ public class ApiController extends BaseController {
 
 
 
-    @ApiOperation("分页查询几何数据")
+    @ApiOperation("分页查询(历史)几何数据")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "startID", value = "上一条数据的endID,默认0",   dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "pageSize", value = "当前页条数，默认20",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "currPole", value = "当前数据最后一个杆号,第一条传空",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "pageNo", value = "页码,从0开始",   dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "pageSize", value = "每页数据量，建议1000起",  dataType = "Int",  dataTypeClass = Integer.class),
     })
-    @GetMapping("/testgetJHData")
+    @GetMapping("/getJHData")
     @ResponseBody
-    public AjaxResult getJHData(String taskPath,int startID,int pageSize) {
+    public AjaxResult getJHData(String taskPath,String currPole,int pageNo,int pageSize) {
         if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
-        if (pageSize == 0) pageSize = 20;
+        if (pageSize == 0) pageSize = 1000;
         try {
-            HashMap dataMap = TaskUtils.getJHdata(decodeTaskName,startID,pageSize);
-            List<HashMap> jhList = (List<HashMap>) dataMap.get("data");
-
-            return new AjaxResult(0,"操作成功",dataMap);
+            List<HashMap> list = TaskUtils.getJHdata(decodeTaskName,currPole,pageSize,pageNo);
+            return new AjaxResult(0,"操作成功",list);
         }catch (Exception e){
         }
         return new AjaxResult(-1,"操作失败","");
+    }
+
+
+
+
+    @ApiOperation("历史对比弹窗-获取历史任务列表")
+    @ApiImplicitParam(name = "currTaskPath", value = "当前任务全路径", required = true, dataType = "String",  dataTypeClass = String.class)
+    @GetMapping("/getHistoryTasks")
+    @ResponseBody
+    public AjaxResult getHistoryTasks(String currTaskPath)
+    {
+        String decodeTaskName = TaskUtils.decodeBase64String(currTaskPath.replaceAll(" ","+"));
+        return new AjaxResult(0,"操作成果",TaskUtils.getHistoryTasks(decodeTaskName));
+    }
+
+
+    @ApiOperation("历史对比弹窗-获取所有相机")
+    @GetMapping("/getAllCameras")
+    @ResponseBody
+    public AjaxResult getAllCameras()
+    {
+        try {
+            List<FcCamera> cameras = iFcCameraService.selectFcCameraList(new FcCamera());
+            List<HashMap> results = new ArrayList<>();
+            for (FcCamera camera:cameras){
+                HashMap map = new HashMap();
+                map.put("id",camera.getId());
+                map.put("name",camera.getName());
+                map.put("typeId",camera.getTypeid());
+                map.put("direct",camera.getDirect());
+                results.add(map);
+            }
+            return  new AjaxResult(0,"操作成功",results);
+        }catch (Exception e){
+
+        }
+        return new AjaxResult(-1,"操作失败",null);
+    }
+
+
+
+    @ApiOperation("历史对比弹窗-获取照片")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "pole", value = "杆号",   dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "cameraId", value = "相机编号",  dataType = "Int",  dataTypeClass = Integer.class),
+    })
+    @GetMapping("/getImagesByCamera")
+    @ResponseBody
+    public AjaxResult getImagesByCamera(String taskPath,String pole,int cameraId) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+        try {
+            String dbFilePath = TaskUtils.getDbPath(decodeTaskName);
+            Connection conn = null;
+            PreparedStatement ps = null;
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            //查询某一杆号下的所有信息
+            String sql = "SELECT Id,cID,imgKey,SubDBID from indexTB where POL='"+pole+"' and cID="+cameraId+";";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            List<HashMap> imgs = new ArrayList<>();
+
+            while ( rs.next() ) {
+                HashMap map = new HashMap();
+                map.put("cID",rs.getInt("cID") );
+                map.put("imgKey",rs.getLong("imgKey") );
+                map.put("SubDBID",rs.getInt("SubDBID") );
+                imgs.add(map);
+            }
+            ps.close();
+            conn.commit();
+            conn.close();
+
+            for (HashMap map :imgs ){
+                List<FcRecord> records  = fcRecordService.selectFcRecordList(new FcRecord((Long) map.get("imgKey")));
+                if (records!=null && records.size()>0) map.put("records",records);
+            }
+
+            return new AjaxResult(0,"操作成功",imgs);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+    @ApiOperation("杆号校准-获取所有杆号、公里标信息")
+    @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class)
+    @GetMapping("/revise/getPolAndKMVInfo")
+    @ResponseBody
+    public AjaxResult getData(String taskPath) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+        try {
+            return new AjaxResult(0,"操作成功",TaskUtils.getPolAndKMVInfo(decodeTaskName));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+    @ApiOperation("杆号校准-根据杆号删除信息")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "poles", value = "杆号（用,拼接）",required = true,   dataType = "String",  dataTypeClass = String.class),
+    })
+    @PostMapping("/revise/delData")
+    @ResponseBody
+    public AjaxResult delData(String taskPath,String poles) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        if (poles.isEmpty()) return new AjaxResult(-1,"杆号不能为空","");
+
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+
+        boolean result = TaskUtils.delPolAndKMVInfo(decodeTaskName,poles);
+        if (result ) return new AjaxResult(0,"操作成功","");
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+    @ApiOperation("杆号校准-精准校正")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "oldPole", value = "原始杆号",required = true,   dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "newPole", value = "修改后的杆号", dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "newKmv", value = "修改后的公里标", dataType = "Double",  dataTypeClass = Double.class),
+            @ApiImplicitParam(name = "newStation", value = "修改后的的站区", dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "isPoleExist", value = "修改后的的杆号是否已存在", dataType = "Boolean",  dataTypeClass = Boolean.class),
+    })
+    @PostMapping("/revise/updateData")
+    @ResponseBody
+    public AjaxResult updateData(String taskPath,String oldPole,String newPole,double newKmv,String newStation,boolean isPoleExist) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        if (oldPole.isEmpty()) return new AjaxResult(-1,"杆号不能为空","");
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+        String existPoleNewName = "";//已存在杆号的新name
+        if (isPoleExist){
+            int suffixNum = 1;
+            try {
+                String[] poleName = newPole.split("_");
+                if (poleName!=null && poleName.length==2) suffixNum = Integer.parseInt(poleName[1])+1;
+                existPoleNewName = poleName[0]+"_"+suffixNum;
+            }catch (Exception e){
+            }
+        }
+        boolean success = TaskUtils.updatePolAndKMVInfo(decodeTaskName,oldPole,newPole,newKmv,newStation,existPoleNewName);
+        if (!success)return new AjaxResult(-1,"操作失败","");
+        try {
+            //修改缺陷记录  主要修改STN、KMV、pole
+            FcRecord record = new FcRecord();
+            record.setPole(oldPole);
+            List<FcRecord> recordList = fcRecordService.selectFcRecordList(record);
+            for (FcRecord fcRecord:recordList){
+                if (fcRecord.getPole().equals(record.getPole())){
+                    fcRecord.setPole(!existPoleNewName.isEmpty()?existPoleNewName:newPole);
+                    fcRecord.setKMV(newKmv);
+                    fcRecord.setSTN(newStation);
+                    fcRecordService.updateFcRecord(fcRecord);
+                    //修改几何数据里的杆号
+                    new Thread(()-> TaskUtils.updateJHdata(decodeTaskName,oldPole,fcRecord.getPole())).start();
+                }
+            }
+
+
+
+            return new AjaxResult(0,"操作成功","");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+
+    @ApiOperation("批量移动杆号")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "movePoles", value = "选中的杆号集合,用逗号拼接",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "asc", value = "右移为true，左移为false",  dataType = "Boolean",  dataTypeClass = Boolean.class),
+            @ApiImplicitParam(name = "moveCount", value = "移动的格数，默认1",  dataType = "Integer",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "targetPole", value = "目标位置的杆号，如果是首尾，则传null或者''",  dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @PostMapping("/revise/testupdateMultiData")
+    @RepeatSubmit(interval = 2000,message = "禁止重复提交")
+    @ResponseBody
+    public AjaxResult updateMultiData(String taskPath,String movePoles,boolean asc,int moveCount,String targetPole) {
+
+
+        try{
+            if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+            String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+
+            String[] poles = movePoles.split(",");
+            if (poles == null || poles.length == 0)return new AjaxResult(-1,"操作失败","");
+
+            boolean success = TaskUtils.updateMulti(decodeTaskName, poles,asc,moveCount,targetPole);
+            if (!success)return new AjaxResult(-1,"操作失败","");
+
+            try{
+
+                if (asc){ //正序
+                    for (int i = poles.length-1;i >= 0 ; i--){
+                        if (poles[i].isEmpty()) continue;
+                        final int index = i;
+                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(targetPole.isEmpty()?poles[index]:targetPole))).start();
+                        else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index+1])).start();
+                    }
+                }else { //逆序
+                    for (int i = 0;i < poles.length ; i--){
+                        if (poles[i].isEmpty()) continue;
+                        final int index = i;
+                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(targetPole.isEmpty()?poles[index]:targetPole))).start();
+                        else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index-1])).start();
+                    }
+                }
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+
+            if (success)return new AjaxResult(0,"修改成功","");
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new AjaxResult(-1,"修改失败","");
     }
 }

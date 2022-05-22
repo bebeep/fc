@@ -2,20 +2,15 @@ package com.ruoyi.web.tools;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.framework.web.domain.server.Sys;
-import org.slf4j.Logger;
-import sun.misc.BASE64Encoder;
-
 import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 public class TaskUtils {
 
@@ -89,6 +84,48 @@ public class TaskUtils {
         return list;
     }
 
+    /**
+     * 根据任务路径查询历史任务
+     * @return
+     */
+    public static List<HashMap> getHistoryTasks(String currTaskPath){
+        File file = new File(currTaskPath);
+        if (!file.exists() || !file.isDirectory() || file.list() == null || file.list().length == 0){
+            return null;
+        }
+
+        try {
+            String reg = "\\\\";
+            String taskData = currTaskPath.split(reg)[3].substring(0,10);
+            String taskName = currTaskPath.split(reg)[3].substring(20,currTaskPath.split(reg)[3].length());
+
+            File baseFile = new File(basePath);
+            List<HashMap> list = new ArrayList<>();
+            HashMap<String,Object> map;
+            for (String dateFilePath:baseFile.list()){
+                File dateFiles = new File(basePath+dateFilePath);
+                if (!dateFiles.isDirectory() || dateFiles.list() == null) continue;
+                if (DateUtils.parseDate(taskData.replaceAll("_","-")).getTime()
+                        != DateUtils.parseDate(dateFilePath.replaceAll("_","-")).getTime()) continue;
+
+                for (String taskFilePath:dateFiles.list()){
+                    if (taskFilePath.substring(20,taskFilePath.length()).equals(taskName)){
+                        map = new HashMap<>();
+                        map.put("taskName", basePath+dateFilePath+"\\"+taskFilePath);
+                        map.put("taskPath", enCodeStringToBase64(basePath+dateFilePath+"\\"+taskFilePath));
+                        list.add(map);
+                    }
+                }
+            }
+            System.out.println("\n获取历史任务："+ JSON.toJSON(list));
+            return list;
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 
     /**
      * 根据任务路径查询站区信息
@@ -103,7 +140,7 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String sql = "SELECT Id,STN from indexTB;";
+            String sql = "SELECT Id,STN,KMV from indexTB;";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
@@ -121,6 +158,7 @@ public class TaskUtils {
                 map = new HashMap<>();
                 map.put("startId",rs.getInt("Id"));
                 map.put("stationName",stationName);
+                map.put("kmv",rs.getDouble("KMV"));//公里标
                 list.add(map);
             }
             ps.close();
@@ -166,7 +204,7 @@ public class TaskUtils {
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
             String lastRoleName = ""; //杆号
-            long lastKMV = 0;
+            double lastKMV = 0;
 
             //每个杆号下面的图片信息 cID(相机编号) SubDBID(图像分库编号) imgKey(图像ID) DxId(吊弦分组编号)
             List<HashMap<String,Object>> imageInfos = new ArrayList<>();
@@ -192,7 +230,7 @@ public class TaskUtils {
                 }
 
                 lastRoleName = roleName;
-                lastKMV = rs.getLong("KMV");
+                lastKMV = rs.getDouble("KMV");
                 HashMap<String,Object> imageMap = new HashMap<>();
                 imageMap.put("id",id);
                 imageMap.put("cID",rs.getInt("cID"));
@@ -231,7 +269,7 @@ public class TaskUtils {
 
 
     /**
-     * 根据杆号和相机分类获取所有图片信息
+     * 根据杆号获取所有图片信息
      * @return
      */
     public static List<HashMap<String,Object>> getImages(String taskPath,String pole, List<HashMap> cameraList){
@@ -261,10 +299,6 @@ public class TaskUtils {
                 map.put("DxInd",rs.getInt("DxInd") );
                 map.put("TIM",rs.getLong("TIM") );
                 map.put("SubDBID",rs.getInt("SubDBID") );
-//                map.put("imgContent", selectImage(
-//                        taskPath+"\\DB\\C"+rs.getInt("cID")+"_"+rs.getInt("SubDBID")+".subDb",
-//                        rs.getLong("imgKey")));
-//                map.put("imgContent", "http://www.baidu.com假图片地址");
                 list.add(map);
             }
             ps.close();
@@ -327,7 +361,7 @@ public class TaskUtils {
      * 获取几何数据
      * @return
      */
-    public static HashMap getJHdata(String taskPath,int startID,int pageSize){
+    public static List<HashMap> getJHdata(String taskPath,String currPole,int pageSize,int pageNo){
         String dbFilePath = getJHPath(taskPath);
         Connection conn = null;
         PreparedStatement ps = null;
@@ -337,119 +371,54 @@ public class TaskUtils {
             conn.setAutoCommit(false);
 
 
-//            String sql = "SELECT Pole,Station,KMV,Hei,Zig,speed from JH_INFO limit "+pageSize * pageNo+","+(pageNo+1) * pageSize+";";
-            String sql = "SELECT ID,Pole,Station,KMV,Hei,Zig,speed,Posi from JH_INFO where ID >"+startID+";";
-            ps = conn.prepareStatement(sql);
+            //查询表中是否包含Zig2 Hei2 字段
+            String checkSql = "PRAGMA table_info(JH_INFO)";
+            ps = conn.prepareStatement(checkSql);
             ResultSet rs = ps.executeQuery();
 
-            List<HashMap> list = new ArrayList<>();
-
-
-            int endID = 0 ;
-            int page = 0;
-            String lastPosi = "";//标志位：JCXP_DROPPER   JXCP_POLE
-            String lastPole = "";//上一个杆号
-
-            double hei = 0; //导高
-            double zig = 0; //拉出值
-            double speed = 0; //速度
-
-            double minHeight = 0; //最小导高
-            double minZig = 0; //最小拉出值
-            double minSpeed = 0; //最小速度
-
-            double maxHeight = 0; //最大导高
-            double maxZig = 0; //最大拉出值
-            double maxSpeed = 0; //最大速度
-
-            List<Double> heightDatas = new ArrayList<>();
-            List<Double> zigDatas = new ArrayList<>();
-            List<Double> speedDatas = new ArrayList<>();
-
+            String Zig2 = "";
+            String Hei2 = "";
             while ( rs.next() ) {
-                if (rs.getString("posi").isEmpty()) continue;
-
-                //第一个posi
-                if ((rs.getString("posi").equals("JCXP_DROPPER") || rs.getString("posi").equals("JXCP_POLE"))
-                        &&!lastPosi.equals(rs.getString("posi"))){
-                    hei = rs.getDouble("Hei");
-                    zig = rs.getDouble("Zig");
-                    speed = rs.getDouble("Speed");
-                    lastPosi = rs.getString("posi");
-
-                }
-
-                //最后一个Pole
-                if (!lastPole.isEmpty() && !lastPole.equals(rs.getString("Pole"))){
-                    HashMap map = new HashMap();
-                    map.put("pole", lastPole);
-                    map.put("hei", hei);
-                    map.put("zig", zig);
-                    map.put("speed", speed);
-                    map.put("heiDatas", heightDatas);
-                    map.put("zigDatas", zigDatas);
-                    map.put("speedDatas", speedDatas);
-
-                    list.add(map);
-                    page++;
-                    heightDatas = new ArrayList<>();
-                    zigDatas = new ArrayList<>();
-                    speedDatas = new ArrayList<>();
-                    if (page == pageSize) break;
-                }
-
-
-                lastPole = rs.getString("Pole");
-
-
-                double currHei = rs.getDouble("Hei");
-                double currZig = rs.getDouble("Zig");
-                double currSpeed = rs.getDouble("Speed");
-                endID = rs.getInt("ID");
-
-
-                if (minHeight == 0) minHeight = currHei;
-                if (minZig == 0) minZig = currZig;
-                if (minSpeed == 0) minSpeed = currSpeed;
-
-                if (currHei!= 65536) {
-                    minHeight = Math.min(minHeight,currHei);
-                    maxHeight = Math.max(maxHeight,currHei);
-                    heightDatas.add(currHei);
-                }
-
-                if (currZig!= 65536){
-                    zigDatas.add(currZig);
-                    minZig = Math.min(minZig,currZig);
-                    maxZig = Math.max(maxZig,currZig);
-                }
-
-
-                speedDatas.add(currSpeed);
-                minSpeed = Math.min(minSpeed,currSpeed);
-                maxSpeed = Math.max(maxSpeed,currSpeed);
-
+                if (rs.getString("name").equals("Zig2")) Zig2 = "Zig2";
+                if (rs.getString("name").equals("Hei2")) Hei2 = "Hei2";
             }
 
+
+            String sql = "SELECT ID,Pole,Station,KMV,Hei,Zig,speed,Posi from JH_INFO where  zig!=65536 and Hei!=65536 and posi='JCXP_DROPPER' or posi='JXCP_POLE' limit "+pageNo*pageSize+","+pageSize+";";
+            if (!Zig2.isEmpty() && !Hei2.isEmpty()){
+                sql = "SELECT ID,Pole,Station,KMV,Hei,Hei2,Zig,Zig2,speed,Posi from JH_INFO where zig!=65536 and Hei!=65536 and  posi='JCXP_DROPPER' or posi='JXCP_POLE' limit "+pageNo*pageSize+","+pageSize+";";
+            }else if (!Zig2.isEmpty()){
+                sql = "SELECT ID,Pole,Station,KMV,Hei,Zig,Zig2,speed,Posi from JH_INFO where zig!=65536 and Hei!=65536 and  posi='JCXP_DROPPER' or posi='JXCP_POLE' limit "+pageNo*pageSize+","+pageSize+";";
+            }else if (!Hei2.isEmpty()){
+                sql = "SELECT ID,Pole,Station,KMV,Hei,Hei2,Zig,speed,Posi from JH_INFO where zig!=65536 and Hei!=65536 and  posi='JCXP_DROPPER' or posi='JXCP_POLE' limit "+pageNo*pageSize+","+pageSize+";";
+            }
+
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+
+            List<HashMap> list = new ArrayList<>();
+            while ( rs.next() ) {
+                HashMap map = new HashMap();
+                if (currPole == null || currPole.isEmpty() || !currPole.equals(rs.getString("Pole"))){
+                    currPole = rs.getString("Pole");
+                    map.put("currPole",rs.getString("Pole"));
+                    map.put("currKmv",rs.getDouble("KMV"));
+                }
+                map.put("hei", rs.getDouble("Hei"));
+                map.put("zig", rs.getDouble("Zig"));
+                map.put("speed", rs.getDouble("Speed"));
+                if (!Zig2.isEmpty())  map.put("zig2", rs.getDouble("Zig2"));
+                if (!Hei2.isEmpty()) map.put("hei2", rs.getDouble("Hei2"));
+
+                list.add(map);
+            }
 
 
             ps.close();
             conn.commit();
             conn.close();
             System.out.println("几何数据:"+list.size());
-            System.out.println("最小值:"+minHeight+"|"+minZig+"|"+minSpeed);
-            System.out.println("最大值:"+maxHeight+"|"+maxZig+"|"+maxSpeed);
-            System.out.println("endID:"+endID+"|"+list.size());
-            HashMap map = new HashMap();
-            map.put("data",list);
-            map.put("minHeight",minHeight);
-            map.put("minZig",minZig);
-            map.put("minSpeed",minSpeed);
-            map.put("maxHeight",maxHeight);
-            map.put("maxZig",maxZig);
-            map.put("maxSpeed",maxSpeed);
-            map.put("endID",endID);
-            return map;
+            return list;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }
@@ -457,7 +426,323 @@ public class TaskUtils {
     }
 
 
+    /**
+     * 修改几何数据里的杆号
+     */
+    public static boolean updateJHdata(String taskPath,String oldPole, String newPole){
+        String dbFilePath = getJHPath(taskPath);
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
 
+            String  sql = "update JH_INFO set Pole='"+newPole+"' where Pole='"+oldPole+"';";
+            long time = System.currentTimeMillis();
+            ps = conn.prepareStatement(sql);
+            int result = ps.executeUpdate();
+
+            ps.close();
+            conn.commit();
+            conn.close();
+            System.out.println("几何数据修改结果:"+(System.currentTimeMillis() - time)+"|"+result);
+            return result > 0;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return false;
+    }
+
+
+
+    /**
+     * 获取所有杆号、公里标信息
+     * @return
+     */
+    public static List<HashMap<String,Object>> getPolAndKMVInfo(String taskPath){
+        String dbFilePath = getDbPath(taskPath);
+//        String dbFilePath = taskPath+"\\indedDB.db";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            String sql = "SELECT Id,POL,KMV,STN,GYKKMV,imgKey,cId,SubDBID from indexTB;";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            List<HashMap<String,Object>> list = new ArrayList<>();
+            HashMap<String,Object> map;
+            String lastRoleName = ""; //杆号
+            String lastSTN = ""; //站区
+            double lastKMV = 0;
+            double lastGYKKMV = 0;
+            int startId = 0;
+            int endId = 0;
+
+            //图片信息
+            List<HashMap<String,Object>> imageInfos = new ArrayList<>();
+            while ( rs.next() ) {
+                String roleName = rs.getString("POL");
+                if (lastSTN.isEmpty())lastSTN = rs.getString("STN");
+                if (startId == 0)startId  = rs.getInt("Id");
+                if (lastRoleName.isEmpty() )lastRoleName = roleName;
+                if (!lastRoleName.equals(roleName)){
+                    //说明杆号发生改变
+                    map = new HashMap<>();
+                    map.put("KMV",lastKMV);
+                    map.put("GYKKMV",lastGYKKMV);
+                    map.put("POL",lastRoleName);
+                    map.put("STN",lastSTN);
+                    map.put("startId",startId);
+                    map.put("endId",endId);
+
+                    List<HashMap<String,Object>> poleImages = new ArrayList<>();//杆号相机
+                    List<HashMap<String,Object>> globalImages = new ArrayList<>();//全局相机
+                    setImages(imageInfos, poleImages, globalImages);
+                    map.put("poleImages",poleImages);
+                    map.put("globalImages",globalImages);
+                    list.add(map);
+                    imageInfos = new ArrayList<>();
+                    startId  = rs.getInt("Id");
+                }
+                lastRoleName = roleName;
+                lastSTN = rs.getString("STN");
+                endId = rs.getInt("Id");
+                lastKMV = rs.getDouble("KMV");
+                lastGYKKMV = rs.getDouble("GYKKMV");
+                HashMap<String,Object> imageMap = new HashMap<>();
+                imageMap.put("cID",rs.getInt("cID"));
+                imageMap.put("imgKey",rs.getLong("imgKey"));
+                imageMap.put("SubDBID",rs.getInt("SubDBID"));
+                imageInfos.add(imageMap);
+            }
+            //最后一项
+            map = new HashMap<>();
+            map.put("KMV",lastKMV);
+            map.put("POL",lastRoleName);
+            map.put("STN",lastSTN);
+            map.put("GYKKMV",lastGYKKMV);
+            map.put("startId",startId);
+            map.put("endId",endId);
+
+            List<HashMap<String,Object>> poleImages = new ArrayList<>();//杆号相机
+            List<HashMap<String,Object>> globalImages = new ArrayList<>();//全局相机
+            setImages(imageInfos, poleImages, globalImages);
+            map.put("poleImages",poleImages);
+            map.put("globalImages",globalImages);
+
+            list.add(map);
+
+            ps.close();
+            conn.commit();
+            conn.close();
+
+            //重组数据，杆号下分相机分类-相机列表-图片列表
+            System.out.println("\n杆号信息1："+ list.size() + " | "+JSON.toJSON(list.get(0)));
+            System.out.println("\n杆号信息2："+ list.size() + " | "+JSON.toJSON(list.get(list.size()-1)));
+            return list;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return null;
+    }
+
+    private static void setImages(List<HashMap<String, Object>> imageInfos, List<HashMap<String, Object>> poleImages, List<HashMap<String, Object>> globalImages) {
+        for (HashMap img:imageInfos){
+            if (((int)img.get("cID") == 3) || (int)img.get("cID") == 4
+                    || (int)img.get("cID") == 19 || (int)img.get("cID") == 20){//杆号相机
+                poleImages.add(img);
+            }else if (((int)img.get("cID") == 11) || (int)img.get("cID") == 12
+                    || (int)img.get("cID") == 27 || (int)img.get("cID") == 28){//全局相机
+                globalImages.add(img);
+            }
+        }
+    }
+
+    /**
+     * 根据杆号删除数据
+     * @return
+     */
+    public static boolean delPolAndKMVInfo(String taskPath,String poles){
+        String dbFilePath = getDbPath(taskPath);
+//        String dbFilePath = "C:\\Users\\Administrator\\Desktop\\indedDB.db";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            String[] poleArr = poles.split(",");
+            StringBuilder poleSql = new StringBuilder();
+            poleSql.append("(");
+            for (String pole:poleArr){
+                poleSql.append("'"+pole+"',");
+            }
+            if (poleSql.toString().endsWith(",")) poleSql.delete(poleSql.toString().length()-1,poleSql.toString().length());
+            poleSql.append(")");
+
+            String sql = "delete from indexTB where POL in "+poleSql.toString();
+            ps = conn.prepareStatement(sql);
+            int result = ps.executeUpdate();
+            ps.close();
+            conn.commit();
+            conn.close();
+            return result>0;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return false;
+    }
+
+
+    /**
+     * 精准校正
+     */
+    public static boolean updatePolAndKMVInfo(String taskPath,String oldPole, String newPole,double newKmv,String newStation,String existPoleNewName){
+        String dbFilePath = getDbPath(taskPath);
+//        String dbFilePath = "C:\\Users\\Administrator\\Desktop\\indedDB.db";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+
+            if (!existPoleNewName.isEmpty()){//修改后的的杆号已存在,则重新命名
+                newPole = existPoleNewName;
+            }
+
+            String sql;
+            if (!newPole.isEmpty() && !newStation.isEmpty()){
+                sql = "update indexTB set POL='"+newPole+"',KMV="+newKmv+",STN='"+newStation+"'  where POL='"+oldPole+"'";
+            }else{
+                if (!newPole.isEmpty()) sql = "update indexTB set POL='"+newPole+"',KMV="+newKmv+"  where POL='"+oldPole+"'";
+                else if (!newStation.isEmpty())sql= "update indexTB set KMV="+newKmv+",STN='"+newStation+"'  where POL='"+oldPole+"'";
+                else sql= "update indexTB set KMV="+newKmv+"  where POL='"+oldPole+"'";
+            }
+
+            ps = conn.prepareStatement(sql);
+            int result = ps.executeUpdate();
+            ps.close();
+            conn.commit();
+            conn.close();
+            return result>0;
+        } catch ( Exception e ) {
+            e.printStackTrace();
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return false;
+    }
+
+
+    /**
+     * 批量校正
+     * 暂时只支持每次移动一位
+     */
+    public static boolean updateMulti(String taskPath,String[] poles,boolean asc,int moveCount,String targetPole){
+//        String dbFilePath = getDbPath(taskPath);
+        String dbFilePath = "C:\\Users\\Administrator\\Desktop\\indedDB.db";
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            String sql;
+
+
+            if (poles == null || poles.length == 0 ) return false;
+
+            Statement stat = conn.createStatement();
+            int resultCount = 0;
+            if (asc){ //正序
+                for (int i = poles.length-1;i >= 0 ; i--){
+                    if (poles[i].isEmpty()) continue;
+                    if (i == poles.length - 1) sql = "update indexTB set POL='"+getNewPoleName(targetPole.isEmpty()?poles[i]:targetPole)+"'  where POL='"+poles[i]+"'";
+                    else sql = "update indexTB set POL='"+poles[i+1]+"'  where POL='"+poles[i]+"'";
+                    resultCount+= stat.executeUpdate(sql);
+                }
+            }else { //逆序
+                for (int i = 0;i < poles.length ; i--){
+                    if (poles[i].isEmpty()) continue;
+                    if (i == 0) sql = "update indexTB set POL='"+getNewPoleName(targetPole.isEmpty()?poles[i]:targetPole)+"'  where POL='"+poles[i]+"'";
+                    else sql = "update indexTB set POL='"+poles[i-1]+"'  where POL='"+poles[i]+"'";
+                    resultCount+= stat.executeUpdate(sql);
+                }
+            }
+
+
+
+            //1、创建一张新表
+            //2、按照新的顺序将数据复制到新表
+            //3、删除旧表
+            //4、重命名新表
+//            long time = System.currentTimeMillis();
+//            Statement stat = conn.createStatement();
+//            stat.execute("drop table if exists indexTB_temp;");
+//            stat.execute("CREATE TABLE indexTB_temp(Id INTEGER PRIMARY KEY AUTOINCREMENT ,imgKey INT64 ,cID integer,TIM INT64,POL VARCHAR(50)," +
+//                    "STN VARCHAR(255),KMV double,GYKKMV double,WHEEL INT64,OCR varchar(50),DxInd int,SubDBID int,dbPath varchar(255),sJson TEXT);");
+//
+//
+//            for (HashMap hashMap:resultIds){
+//                int startCopyId = (int) hashMap.get("startId");
+//                int endCopyId = (int) hashMap.get("endId");
+//                stat.execute("INSERT INTO indexTB_temp SELECT * FROM indexTB  WHERE Id >="+startCopyId+" and Id <= "+endCopyId);
+//            }
+//
+//            stat.execute("drop table if exists indexTB;");
+//            stat.execute("ALTER TABLE indexTB_temp RENAME TO indexTB;");
+//
+//            System.out.println("time: "+(System.currentTimeMillis() - time));
+//            System.out.println("resultIds: "+JSONObject.toJSON(resultIds));
+
+            System.out.println("批量校正：resultCount-》"+resultCount);
+
+            conn.commit();
+            conn.close();
+            return resultCount>0;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return false;
+    }
+
+
+    public static String getNewPoleName(String poleName){
+        String existPoleNewName = "";//已存在杆号的新name
+        int suffixNum = 1;
+        try {
+            String[] poleNames = poleName.split("_");
+            if (poleNames.length==2) suffixNum = Integer.parseInt(poleNames[1])+1;
+            existPoleNewName = poleNames[0]+"_"+suffixNum;
+            return existPoleNewName;
+        }catch (Exception e){
+        }
+        return poleName+"_1";
+    }
+
+
+    /**
+     * 处理正序与逆序
+     */
+    private static void formatPoles(List<HashMap> multiPoles, boolean asc, List<HashMap> resultIds, int startPoleId, int endPoleId) {
+        if (asc){ //正序
+            HashMap map = new HashMap();
+            map.put("startId",startPoleId);
+            map.put("endId",endPoleId);
+            resultIds.add(map);
+        }else { //逆序
+            Collections.reverse(multiPoles);
+            resultIds.addAll(multiPoles);
+        }
+    }
 
 
 
@@ -495,14 +780,34 @@ public class TaskUtils {
 //        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L);
 //        selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351155801L);
 
-        getJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行",229448,20);
+//        getJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行",229448,20);
+
+//       List list = getPolAndKMVInfo("C:\\Users\\Administrator\\Desktop");
+
+//        delPolAndKMVInfo("C:\\Users\\Administrator\\Desktop","Y033 ,Y029 ,Y026 ,Y024 ");
+
+//        updatePolAndKMVInfo("C:\\Users\\Administrator\\Desktop","Y022 ","Y022",359.333,"全椒站","Y022");
+
+
+//        List<HashMap> list = new ArrayList<>();
+//        HashMap map = new HashMap();
+//        map.put("startId",400);
+//        map.put("endId",500);
+//        list.add(map);
+//        HashMap map1 = new HashMap();
+//        map1.put("startId",500);
+//        map1.put("endId",600);
+//        list.add(map1);
+//        updateMulti("C:\\Users\\Administrator\\Desktop",list,true,0,1000);
+
+        updateJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行","50","50_");
     }
 
 
 
 
 
-    private static String getDbPath(String taskPath){
+    public static String getDbPath(String taskPath){
         File taskFile = new File(taskPath);
         if (!taskFile.exists() || !taskFile.isDirectory() || taskFile.list() == null || taskFile.list().length == 0){
             return null;
