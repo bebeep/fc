@@ -797,8 +797,10 @@ public class ApiController extends BaseController {
             }
 
 
+            HashMap map = new HashMap();
+            map.put("newPole",existPoleNewName.isEmpty()?newPole:existPoleNewName);
 
-            return new AjaxResult(0,"操作成功","");
+            return new AjaxResult(0,"操作成功",map);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -815,7 +817,7 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "targetPole", value = "目标位置的杆号，如果是首尾，则传null或者''",  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
-    @PostMapping("/revise/testupdateMultiData")
+    @PostMapping("/revise/updateMultiData")
     @RepeatSubmit(interval = 2000,message = "禁止重复提交")
     @ResponseBody
     public AjaxResult updateMultiData(String taskPath,String movePoles,boolean asc,int moveCount,String targetPole) {
@@ -829,23 +831,23 @@ public class ApiController extends BaseController {
             String[] poles = movePoles.split(",");
             if (poles == null || poles.length == 0)return new AjaxResult(-1,"操作失败","");
 
-            boolean success = TaskUtils.updateMulti(decodeTaskName, poles,asc,moveCount,targetPole);
-            if (!success)return new AjaxResult(-1,"操作失败","");
+            HashMap map = TaskUtils.updateMulti(decodeTaskName, poles,asc,moveCount,targetPole);
+            if (map == null)return new AjaxResult(-1,"操作失败","");
 
             try{
-
+                boolean isTargetPoleNull = targetPole == null || targetPole.isEmpty() || targetPole.equals("null") || targetPole.equals("NULL");
                 if (asc){ //正序
                     for (int i = poles.length-1;i >= 0 ; i--){
                         if (poles[i].isEmpty()) continue;
                         final int index = i;
-                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(targetPole.isEmpty()?poles[index]:targetPole))).start();
+                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(isTargetPoleNull?poles[index]:targetPole))).start();
                         else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index+1])).start();
                     }
                 }else { //逆序
                     for (int i = 0;i < poles.length ; i--){
                         if (poles[i].isEmpty()) continue;
                         final int index = i;
-                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(targetPole.isEmpty()?poles[index]:targetPole))).start();
+                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(isTargetPoleNull?poles[index]:targetPole))).start();
                         else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index-1])).start();
                     }
                 }
@@ -855,7 +857,7 @@ public class ApiController extends BaseController {
             }
 
 
-            if (success)return new AjaxResult(0,"修改成功","");
+            return new AjaxResult(0,"修改成功",map);
         }catch (Exception e){
             e.printStackTrace();
         }

@@ -645,9 +645,9 @@ public class TaskUtils {
      * 批量校正
      * 暂时只支持每次移动一位
      */
-    public static boolean updateMulti(String taskPath,String[] poles,boolean asc,int moveCount,String targetPole){
-//        String dbFilePath = getDbPath(taskPath);
-        String dbFilePath = "C:\\Users\\Administrator\\Desktop\\indedDB.db";
+    public static HashMap updateMulti(String taskPath,String[] poles,boolean asc,int moveCount,String targetPole){
+        String dbFilePath = getDbPath(taskPath);
+//        String dbFilePath = "C:\\Users\\Administrator\\Desktop\\indedDB.db";
         Connection conn = null;
         PreparedStatement ps = null;
         try {
@@ -658,27 +658,53 @@ public class TaskUtils {
             String sql;
 
 
-            if (poles == null || poles.length == 0 ) return false;
+            if (poles == null || poles.length == 0 ) return null;
 
             Statement stat = conn.createStatement();
             int resultCount = 0;
+            boolean isTargetPoleNull = targetPole == null || targetPole.isEmpty() || targetPole.equals("null") || targetPole.equals("NULL");
+
+
+            String newStartPole = "",newEndPole = "";
+
             if (asc){ //正序
                 for (int i = poles.length-1;i >= 0 ; i--){
                     if (poles[i].isEmpty()) continue;
-                    if (i == poles.length - 1) sql = "update indexTB set POL='"+getNewPoleName(targetPole.isEmpty()?poles[i]:targetPole)+"'  where POL='"+poles[i]+"'";
-                    else sql = "update indexTB set POL='"+poles[i+1]+"'  where POL='"+poles[i]+"'";
+                    if (i == poles.length - 1) {
+                        newEndPole = getNewPoleName(isTargetPoleNull?poles[i]:targetPole);
+                        sql = "update indexTB set POL='"+newEndPole+"'  where POL='"+poles[i]+"'";
+                    }else sql = "update indexTB set POL='"+poles[i+1]+"'  where POL='"+poles[i]+"'";
+
+                    if (i==0) newStartPole = poles[i+1];
                     resultCount+= stat.executeUpdate(sql);
                 }
             }else { //逆序
                 for (int i = 0;i < poles.length ; i--){
                     if (poles[i].isEmpty()) continue;
-                    if (i == 0) sql = "update indexTB set POL='"+getNewPoleName(targetPole.isEmpty()?poles[i]:targetPole)+"'  where POL='"+poles[i]+"'";
-                    else sql = "update indexTB set POL='"+poles[i-1]+"'  where POL='"+poles[i]+"'";
+                    if (i == 0) {
+                        newStartPole = getNewPoleName(isTargetPoleNull?poles[i]:targetPole);
+                        sql = "update indexTB set POL='"+newStartPole+"'  where POL='"+poles[i]+"'";
+                    }else sql = "update indexTB set POL='"+poles[i-1]+"'  where POL='"+poles[i]+"'";
+                    newEndPole = poles[i-1];
                     resultCount+= stat.executeUpdate(sql);
                 }
             }
 
+            if (resultCount == 0)return null;
 
+            HashMap map = new HashMap();
+            sql = "select KMV from indexTB where POL='"+newStartPole+"' limit 1";
+            ResultSet set = stat.executeQuery(sql);
+            while (set.next()){
+                map.put("newStartPole",newStartPole);
+                map.put("newStartKMV",set.getDouble("KMV"));
+            }
+            sql = "select KMV from indexTB where POL='"+newEndPole+"' limit 1";
+            set = stat.executeQuery(sql);
+            while (set.next()){
+                map.put("newEndPole",newEndPole);
+                map.put("newEndKMV",set.getDouble("KMV"));
+            }
 
             //1、创建一张新表
             //2、按照新的顺序将数据复制到新表
@@ -707,11 +733,11 @@ public class TaskUtils {
 
             conn.commit();
             conn.close();
-            return resultCount>0;
+            return map;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }
-        return false;
+        return null;
     }
 
 
