@@ -348,6 +348,7 @@ public class TaskUtils {
             conn.commit();
             conn.close();
 
+            System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024);
             return isThumb?compressImage(imgContent,10):imgContent;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
@@ -729,7 +730,7 @@ public class TaskUtils {
 //            System.out.println("time: "+(System.currentTimeMillis() - time));
 //            System.out.println("resultIds: "+JSONObject.toJSON(resultIds));
 
-            System.out.println("批量校正：resultCount-》"+resultCount);
+            System.out.println("批量校正：resultCount-》"+resultCount + "|新的杆号信息："+map.toString());
 
             conn.commit();
             conn.close();

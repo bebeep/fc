@@ -1,20 +1,16 @@
 package com.ruoyi.web.controller.fc;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.annotation.RepeatSubmit;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDictData;
-import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.core.domain.model.LoginUser;
-import com.ruoyi.common.utils.LogUtils;
-import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.web.service.SysLoginService;
-import com.ruoyi.system.domain.FcBasetb;
 import com.ruoyi.system.domain.FcCamera;
 import com.ruoyi.system.domain.FcCameraType;
 import com.ruoyi.system.domain.FcRecord;
@@ -24,22 +20,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.URLDecoder;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 @Api(description = "前端接口")
@@ -321,7 +309,13 @@ public class ApiController extends BaseController {
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
-        return TaskUtils.selectImage(tablePath,imageId,isThumb);
+
+        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId);
+        if (bb == null) {
+            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imageId,bb);
+        }
+        return bb;
     }
 
 
@@ -330,7 +324,12 @@ public class ApiController extends BaseController {
     @GetMapping("/testImage")
     @ResponseBody
     public byte[] testImage(boolean isThumb) {
-        byte[] bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
+        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+22030622351037301L);
+        if (bb!=null)System.out.println("缓存中的图片："+bb.length/1024);
+        if (bb == null){
+            bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
+            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L,bb);
+        }
         return bb;
     }
 
