@@ -694,17 +694,17 @@ public class TaskUtils {
             if (resultCount == 0)return null;
 
             HashMap map = new HashMap();
-            sql = "select KMV from indexTB where POL='"+newStartPole+"' limit 1";
+            sql = "select STN from indexTB where POL='"+newStartPole+"' limit 1";
             ResultSet set = stat.executeQuery(sql);
             while (set.next()){
                 map.put("newStartPole",newStartPole);
-                map.put("newStartKMV",set.getDouble("KMV"));
+                map.put("newEndSTN",set.getString("STN"));
             }
-            sql = "select KMV from indexTB where POL='"+newEndPole+"' limit 1";
+            sql = "select STN from indexTB where POL='"+newEndPole+"' limit 1";
             set = stat.executeQuery(sql);
             while (set.next()){
                 map.put("newEndPole",newEndPole);
-                map.put("newEndKMV",set.getDouble("KMV"));
+                map.put("newEndSTN",set.getString("STN"));
             }
 
             //1、创建一张新表
