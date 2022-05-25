@@ -9,12 +9,14 @@ import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.web.service.SysLoginService;
 import com.ruoyi.system.domain.FcCamera;
 import com.ruoyi.system.domain.FcCameraType;
 import com.ruoyi.system.domain.FcRecord;
 import com.ruoyi.system.service.*;
+import com.ruoyi.web.controller.tool.ExportRecord;
 import com.ruoyi.web.tools.TaskUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -24,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -349,7 +353,6 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "componentDefectId", value = "缺陷部件id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "checkDate", value = "检测日期",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
@@ -375,7 +378,6 @@ public class ApiController extends BaseController {
                     jsonParam.getIntValue("componentDefectId"),
                     jsonParam.getIntValue("defectTypeId"),
                     jsonParam.getIntValue("defectLevelId"),
-                    jsonParam.getString("checkDate"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
                     jsonParam.getLong("TIM")
@@ -416,7 +418,6 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "componentDefectId", value = "缺陷部件id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "checkDate", value = "检测日期",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
@@ -442,7 +443,6 @@ public class ApiController extends BaseController {
                     jsonParam.getIntValue("componentDefectId"),
                     jsonParam.getIntValue("defectTypeId"),
                     jsonParam.getIntValue("defectLevelId"),
-                    jsonParam.getString("checkDate"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
                     jsonParam.getLong("TIM")
@@ -599,6 +599,28 @@ public class ApiController extends BaseController {
             record.setContent(content);
 
             return new AjaxResult(0,"操作成功",fcRecordService.selectFcRecordList(record));
+        }catch (Exception e){
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+    @ApiOperation("获取有缺陷的站区和杆号-下拉选择")
+    @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class)
+    @ApiResponse
+    @GetMapping("/getDefectSTNAndPoles")
+    @ResponseBody
+    public AjaxResult getDefectSTNAndPoles(String taskPath) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        try{
+            List<FcRecord> list = fcRecordService.selectFcRecordList(null);
+            List<HashMap> result = new ArrayList<>();
+            for (FcRecord record:list) {
+                HashMap map = new HashMap();
+                map.put("STN",record.getSTN());
+                map.put("Pole",record.getPole());
+                result.add(map);
+            }
+            return new AjaxResult(0,"操作成功",result);
         }catch (Exception e){
         }
         return new AjaxResult(-1,"操作失败","");
@@ -861,5 +883,60 @@ public class ApiController extends BaseController {
             e.printStackTrace();
         }
         return new AjaxResult(-1,"修改失败","");
+    }
+
+
+    @ApiOperation("导出报表-缺陷信息数据")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "tableName", value = "表格名称",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "paraName", value = "段别",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "workShop", value = "车间",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "workArea", value = "工区",  dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @GetMapping("/export/Defect")
+    @RepeatSubmit(interval = 2000,message = "禁止重复请求")
+    public void exportDefect(HttpServletResponse response, String taskPath, String tableName, String paraName, String workShop, String workArea) {
+        if (taskPath.isEmpty()) return;
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+        try{
+
+            LoginUser loginUser = getLoginUser();
+
+
+            FcRecord fcRecord = new FcRecord();
+            fcRecord.setTaskpath(taskPath.replaceAll(" ","+"));
+            List<FcRecord> list = fcRecordService.selectFcRecordList(fcRecord);
+
+
+            String[] taskInfos = decodeTaskName.split("\\\\");
+            String[] lines = taskInfos[3].split("_");
+
+            if (list == null || list.size() == 0)return;
+            List<ExportRecord> exportRecords = new ArrayList<>();
+
+            for (FcRecord fcRecord1:list){
+                exportRecords.add(new ExportRecord(
+                        taskInfos[2],
+                        lines[6],
+                        lines[lines.length-1],
+                        paraName,
+                        workShop,
+                        workArea,
+                        fcRecord1.getKMV().toString(),
+                        fcRecord1.getPole(),
+                        fcRecord1.getDefectType(),
+                        fcRecord1.getDefectLevel(),
+                        fcRecord1.getContent(),
+                        loginUser.getUser().getNickName()+"/"+fcRecord1.getCheckDate()
+                ));
+            }
+            ExcelUtil<ExportRecord> util = new ExcelUtil(ExportRecord.class);
+            util.exportExcel(response, exportRecords, tableName.isEmpty()?("4C缺陷汇总表("+loginUser.getUser().getNickName()+")"):tableName);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

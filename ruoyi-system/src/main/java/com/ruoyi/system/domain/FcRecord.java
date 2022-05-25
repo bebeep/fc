@@ -1,5 +1,6 @@
 package com.ruoyi.system.domain;
 
+import com.ruoyi.common.utils.DateUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
@@ -290,7 +291,6 @@ public class FcRecord extends BaseEntity
                     Integer componentDefectId,
                     Integer defectTypeId,
                     Integer defectLevelId,
-                    String checkDate,
                     String STN,
                     double KMV,
                     Long TIM
@@ -309,7 +309,7 @@ public class FcRecord extends BaseEntity
         this.componentDefectId = componentDefectId;
         this.defectTypeId = defectTypeId;
         this.defectLevelId = defectLevelId;
-        this.checkDate = checkDate;
+        this.checkDate = DateUtils.getDate();
         this.STN = STN;
         this.KMV = KMV;
         this.TIM = TIM;
