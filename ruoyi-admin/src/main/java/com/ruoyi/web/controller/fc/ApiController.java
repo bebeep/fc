@@ -3,12 +3,14 @@ package com.ruoyi.web.controller.fc;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.annotation.RepeatSubmit;
+import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.web.service.SysLoginService;
@@ -17,6 +19,7 @@ import com.ruoyi.system.domain.FcCameraType;
 import com.ruoyi.system.domain.FcRecord;
 import com.ruoyi.system.service.*;
 import com.ruoyi.web.controller.tool.ExportRecord;
+import com.ruoyi.web.controller.tool.ExportRecordImage;
 import com.ruoyi.web.tools.TaskUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -26,10 +29,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -314,10 +319,10 @@ public class ApiController extends BaseController {
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
 
-        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId);
+        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
         if (bb == null) {
             bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imageId,bb);
+            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imageId+(isThumb?"_thumb":""),bb);
         }
         return bb;
     }
@@ -328,11 +333,11 @@ public class ApiController extends BaseController {
     @GetMapping("/testImage")
     @ResponseBody
     public byte[] testImage(boolean isThumb) {
-        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+22030622351037301L);
+        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""));
         if (bb!=null)System.out.println("缓存中的图片："+bb.length/1024);
         if (bb == null){
             bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
-            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L,bb);
+            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""),bb);
         }
         return bb;
     }
@@ -349,10 +354,10 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "startY", value = "坐标1 y",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "endX", value = "坐标2 x",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "endY", value = "坐标2 y",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "componentNameId", value = "部件名称id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "componentDefectId", value = "缺陷部件id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "componentName", value = "部件名称",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "componentDefect", value = "缺陷部件",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "defectType", value = "缺陷类型",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "defectLevel", value = "缺陷等级",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
@@ -374,10 +379,10 @@ public class ApiController extends BaseController {
                     jsonParam.getIntValue("startY"),
                     jsonParam.getIntValue("endX"),
                     jsonParam.getIntValue("endY"),
-                    jsonParam.getIntValue("componentNameId"),
-                    jsonParam.getIntValue("componentDefectId"),
-                    jsonParam.getIntValue("defectTypeId"),
-                    jsonParam.getIntValue("defectLevelId"),
+                    jsonParam.getString("componentName"),
+                    jsonParam.getString("componentDefect"),
+                    jsonParam.getString("defectType"),
+                    jsonParam.getString("defectLevel"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
                     jsonParam.getLong("TIM")
@@ -414,10 +419,10 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "startY", value = "坐标1 y",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "endX", value = "坐标2 x",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "endY", value = "坐标2 y",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "componentNameId", value = "部件名称id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "componentDefectId", value = "缺陷部件id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "componentName", value = "部件名称",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "componentDefect", value = "缺陷部件",  dataType = "String",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "defectType", value = "缺陷类型",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "defectLevel", value = "缺陷等级",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
@@ -439,10 +444,10 @@ public class ApiController extends BaseController {
                     jsonParam.getIntValue("startY"),
                     jsonParam.getIntValue("endX"),
                     jsonParam.getIntValue("endY"),
-                    jsonParam.getIntValue("componentNameId"),
-                    jsonParam.getIntValue("componentDefectId"),
-                    jsonParam.getIntValue("defectTypeId"),
-                    jsonParam.getIntValue("defectLevelId"),
+                    jsonParam.getString("componentName"),
+                    jsonParam.getString("componentDefect"),
+                    jsonParam.getString("defectType"),
+                    jsonParam.getString("defectLevel"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
                     jsonParam.getLong("TIM")
@@ -522,16 +527,24 @@ public class ApiController extends BaseController {
         record.setTaskpath(taskPath.replaceAll(" ","+"));
         try {
             List<FcRecord> records = fcRecordService.selectFcRecordList(record);
-            List<SysDictData> component_defects = dictTypeService.selectDictDataByType("component_defect");
-            List<SysDictData> defect_types = dictTypeService.selectDictDataByType("defect_type");
-            List<SysDictData> defect_level = dictTypeService.selectDictDataByType("defect_level");
+
+            //按照名称分类
+            List<String> componentDefects = new ArrayList();
+            List<String> typeDefects = new ArrayList();
+            List<String> levelDefects = new ArrayList();
+            for (FcRecord record1:records){
+                componentDefects.add(record1.getComponentDefect());
+                typeDefects.add(record1.getDefectType());
+                levelDefects.add(record1.getDefectLevel());
+            }
+
             HashMap map = new HashMap();
             //缺陷部件
-            map.put("data_component", getChartData(records,component_defects,1));
+            map.put("data_component", getChartData(records,componentDefects,records.size()));
             //缺陷类型
-            map.put("data_type",getChartData(records,defect_types,2));
+            map.put("data_type",getChartData(records,typeDefects,records.size()));
             //缺陷等级
-            map.put("data_level",getChartData(records,defect_level,3));
+            map.put("data_level",getChartData(records,levelDefects,records.size()));
             map.put("total_count", records.size());
             return new AjaxResult(0,"操作成功",map);
         }catch (Exception e){
@@ -542,27 +555,21 @@ public class ApiController extends BaseController {
     /**
      * 获取图表数据
      */
-    private List<HashMap> getChartData(List<FcRecord> records, List<SysDictData> dictDatas,int tag){
+    private List<HashMap> getChartData(List<FcRecord> records, List<String> dictDatas,int totalCount){
         List<HashMap> datas = new ArrayList<>();
         if (records == null || records.size()  == 0) return datas;
-        int totalCount = records.size();
 
-        for (SysDictData dictData:dictDatas){
-            HashMap map = new HashMap();
-            map.put("name",dictData.getDictLabel());
-            int count = 0;
-            for (FcRecord record_:records){
-                if ((tag == 1 && dictData.getDictValue().equals(record_.getComponentDefectId().toString())) ||
-                        (tag == 2 && dictData.getDictValue().equals(record_.getDefectTypeId().toString())) ||
-                        (tag == 3 && dictData.getDictValue().equals(record_.getDefectLevelId().toString()))){
-                    count ++;
-                }
-            }
-            map.put("value",count);
-            map.put("percent",count * 100.0 / totalCount);
-            if (count == 0) continue;
-            datas.add(map);
+        HashMap countMap = new HashMap();
+        for (String dictData:dictDatas){
+            countMap.merge(dictData, 1, (oldValue, newValue) -> (int) oldValue + (int)newValue);
         }
+        countMap.forEach((key,value)->{
+            HashMap data = new HashMap();
+            data.put("name",key);
+            data.put("value",value);
+            data.put("percent",((int)value) * 100.0 / totalCount);
+            datas.add(data);
+        });
         return datas;
     }
 
@@ -575,9 +582,9 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "pole", value = "杆号",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "content", value = "缺陷内容",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "componentDefectId", value = "缺陷部件id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectTypeId", value = "缺陷类型id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "defectLevelId", value = "缺陷等级id",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "componentDefect", value = "缺陷部件",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "defectType", value = "缺陷类型",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "defectLevel", value = "缺陷等级",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
 //            @ApiImplicitParam(name = "pageNo", value = "当前页码，默认0",  dataType = "Int",  dataTypeClass = Integer.class),
 //            @ApiImplicitParam(name = "pageSize", value = "每页数据条数，默认20",  dataType = "Int",  dataTypeClass = Integer.class),
@@ -585,17 +592,17 @@ public class ApiController extends BaseController {
     @ApiResponse
     @GetMapping("/getDefectInfo")
     @ResponseBody
-    public AjaxResult getDefectInfo(String taskPath,String STN,String pole, Integer componentDefectId,
-                                    Integer defectTypeId, Integer defectLevelId,String content,int pageNo,int pageSize) {
+    public AjaxResult getDefectInfo(String taskPath,String STN,String pole, String componentDefect,
+                                    String defectType, String defectLevel,String content) {
         if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
         try{
             FcRecord record = new FcRecord();
             record.setTaskpath(taskPath.replaceAll(" ","+"));
             record.setSTN(STN);
             record.setPole(pole);
-            record.setComponentDefectId(componentDefectId);
-            record.setDefectTypeId(defectTypeId);
-            record.setDefectLevelId(defectLevelId);
+            record.setComponentDefect(componentDefect);
+            record.setDefectType(defectType);
+            record.setDefectLevel(defectLevel);
             record.setContent(content);
 
             return new AjaxResult(0,"操作成功",fcRecordService.selectFcRecordList(record));
@@ -938,5 +945,92 @@ public class ApiController extends BaseController {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+
+    @ApiOperation("导出报表-4C图像缺陷")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "tableName", value = "表格名称",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "railwayAdmin", value = "铁路局",  dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @GetMapping("/export/DefectImage")
+    @RepeatSubmit(interval = 2000,message = "禁止重复请求")
+    public void exportDefectImage(HttpServletResponse response, String taskPath, String tableName, String railwayAdmin) {
+        if (taskPath.isEmpty()) return;
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+        try{
+
+            FcRecord fcRecord = new FcRecord();
+            fcRecord.setTaskpath(taskPath.replaceAll(" ","+"));
+            List<FcRecord> list = fcRecordService.selectFcRecordList(fcRecord);
+
+            String[] taskInfos = decodeTaskName.split("\\\\");
+            String[] lines = taskInfos[3].split("_");
+
+            if (list == null || list.size() == 0)return;
+            List<ExportRecordImage> exportRecords = new ArrayList<>();
+
+            int no = 0;
+            for (FcRecord fcRecord1:list){
+                if (fcRecord1.getImgPath() == null || fcRecord1.getImgPath().isEmpty())continue;
+                no++;
+//                String defectLocate = "";
+//                try {
+//                    //获取相机分类
+//                    FcCamera camera = iFcCameraService.selectFcCameraById((long)fcRecord1.getCameraid());
+//                    defectLocate = camera.getTypeName();
+//                }catch (Exception e){}
+
+
+                exportRecords.add(new ExportRecordImage(
+                        String.valueOf(no),
+                        railwayAdmin,
+                        lines[6],
+                        lines[lines.length-1],
+                        taskInfos[2],
+                        fcRecord1.getSTN(),
+                        fcRecord1.getKMV().toString(),
+                        fcRecord1.getPole(),
+                        fcRecord1.getComponentDefect(),
+                        fcRecord1.getContent(),
+                        fcRecord1.getImgPath()
+                ));
+            }
+            ExcelUtil<ExportRecordImage> util = new ExcelUtil(ExportRecordImage.class);
+            util.exportExcel(response, exportRecords, tableName.isEmpty()?"4C图像缺陷":tableName);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+    @ApiOperation("上传缺陷图片")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "file", value = "文件",  dataType = "MultipartFile",  dataTypeClass = MultipartFile.class),
+            @ApiImplicitParam(name = "imgKey", value = "图片key",  dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @PostMapping("/upload")
+    public AjaxResult uploadFile(MultipartFile file,Long imgKey)
+    {
+        try
+        {
+            // 上传并返回新文件名称
+            String fileName = FileUploadUtils.uploadDefectImage(imgKey.toString(), file);
+            if (!fileName.isEmpty()){
+                //更新到缺陷表
+                FcRecord record = new FcRecord(imgKey);
+                record.setImgPath(fileName);
+                int result = fcRecordService.updateImagePath(record);
+                if (result >0)return new AjaxResult(0,"上传成功");
+            }
+        }
+        catch (Exception e) {e.printStackTrace();}
+        return new AjaxResult(-1,"上传失败");
     }
 }

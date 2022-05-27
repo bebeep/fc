@@ -43,6 +43,8 @@ public interface FcRecordMapper
      */
     public int updateFcRecord(FcRecord fcRecord);
 
+    public int updateImagePath(FcRecord fcRecord);
+
     /**
      * 删除缺陷记录
      * 

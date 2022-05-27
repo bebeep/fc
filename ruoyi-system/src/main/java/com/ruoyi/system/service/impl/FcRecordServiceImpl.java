@@ -67,6 +67,11 @@ public class FcRecordServiceImpl implements IFcRecordService
         return fcRecordMapper.updateFcRecord(fcRecord);
     }
 
+    @Override
+    public int updateImagePath(FcRecord fcRecord) {
+        return fcRecordMapper.updateImagePath(fcRecord);
+    }
+
     /**
      * 批量删除缺陷记录
      * 

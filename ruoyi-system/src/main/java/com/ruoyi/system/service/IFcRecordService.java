@@ -43,6 +43,8 @@ public interface IFcRecordService
      */
     public int updateFcRecord(FcRecord fcRecord);
 
+    public int updateImagePath(FcRecord fcRecord);
+
     /**
      * 批量删除缺陷记录
      * 

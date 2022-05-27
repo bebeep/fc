@@ -41,19 +41,19 @@ public class FcRecord extends BaseEntity
 
     /** 部件名称id */
     @Excel(name = "部件名称id")
-    private Integer componentNameId;
+    private String componentName;
 
     /** 缺陷部件id */
     @Excel(name = "缺陷部件id")
-    private Integer componentDefectId;
+    private String componentDefect;
 
     /** 缺陷类型id */
     @Excel(name = "缺陷类型id")
-    private Integer defectTypeId;
+    private String defectType;
 
     /** 缺陷等级id */
     @Excel(name = "缺陷等级id")
-    private Integer defectLevelId;
+    private String defectLevel;
 
     /** $column.columnComment */
     @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
@@ -72,12 +72,9 @@ public class FcRecord extends BaseEntity
     private Integer endy;
 
 
-    private String componentName;
-    private String componentDefect;
-    private String defectType;
-    private String defectLevel;
     private String checkDate;//检测日期
     private String STN;//站区
+    private String imgPath;//缺陷图片地址
     private Double KMV;//公里标
     private Long TIM;
 
@@ -240,40 +237,19 @@ public class FcRecord extends BaseEntity
         return serialVersionUID;
     }
 
-    public Integer getComponentNameId() {
-        return componentNameId;
+
+    public String getImgPath() {
+        return imgPath;
     }
 
-    public void setComponentNameId(Integer componentNameId) {
-        this.componentNameId = componentNameId;
-    }
-
-    public Integer getComponentDefectId() {
-        return componentDefectId;
-    }
-
-    public void setComponentDefectId(Integer componentDefectId) {
-        this.componentDefectId = componentDefectId;
-    }
-
-    public Integer getDefectTypeId() {
-        return defectTypeId;
-    }
-
-    public void setDefectTypeId(Integer defectTypeId) {
-        this.defectTypeId = defectTypeId;
-    }
-
-    public Integer getDefectLevelId() {
-        return defectLevelId;
-    }
-
-    public void setDefectLevelId(Integer defectLevelId) {
-        this.defectLevelId = defectLevelId;
+    public void setImgPath(String imgPath) {
+        this.imgPath = imgPath;
     }
 
     public FcRecord() {
     }
+
+
     public FcRecord(Long imgkey) {
         this.imgkey = imgkey;
     }
@@ -287,10 +263,10 @@ public class FcRecord extends BaseEntity
                     Integer starty,
                     Integer endx,
                     Integer endy,
-                    Integer componentNameId,
-                    Integer componentDefectId,
-                    Integer defectTypeId,
-                    Integer defectLevelId,
+                    String componentName,
+                    String componentDefect,
+                    String defectType,
+                    String defectLevel,
                     String STN,
                     double KMV,
                     Long TIM
@@ -305,10 +281,10 @@ public class FcRecord extends BaseEntity
         this.starty = starty;
         this.endx = endx;
         this.endy = endy;
-        this.componentNameId = componentNameId;
-        this.componentDefectId = componentDefectId;
-        this.defectTypeId = defectTypeId;
-        this.defectLevelId = defectLevelId;
+        this.componentName = componentName;
+        this.componentDefect = componentDefect;
+        this.defectType = defectType;
+        this.defectLevel = defectLevel;
         this.checkDate = DateUtils.getDate();
         this.STN = STN;
         this.KMV = KMV;
@@ -330,4 +306,5 @@ public class FcRecord extends BaseEntity
             .append("endy", getEndy())
             .toString();
     }
+
 }
