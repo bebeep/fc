@@ -186,7 +186,7 @@ public class TaskUtils {
      * 根据站区分页获取杆号信息
      * @return
      */
-    public static List<HashMap<String,Object>> getRoleInfoByStation(String taskPath,int startId,int endId,int pageNo,int pageSize){
+    public static List<HashMap> getRoleInfoByStation(String taskPath,int startId,int endId){
 
         String dbFilePath = getDbPath(taskPath);
 
@@ -197,13 +197,14 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String sql = "SELECT Id,POL,KMV,cID,imgKey,DxInd from indexTB;";
+            String sql = "SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB;";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
             String lastRoleName = ""; //杆号
+            String lastSTN = ""; //站区
             double lastKMV = 0;
 
             //每个杆号下面的图片信息 cID(相机编号) SubDBID(图像分库编号) imgKey(图像ID) DxId(吊弦分组编号)
@@ -224,6 +225,7 @@ public class TaskUtils {
                     map = new HashMap<>();
                     map.put("KMV",lastKMV);
                     map.put("POL",lastRoleName);
+                    map.put("STN",lastSTN);
 //                    map.put("imgInfos",imageInfos);
                     list.add(map);
                     imageInfos = new ArrayList<>();
@@ -231,6 +233,7 @@ public class TaskUtils {
 
                 lastRoleName = roleName;
                 lastKMV = rs.getDouble("KMV");
+                lastSTN = rs.getString("STN");
                 HashMap<String,Object> imageMap = new HashMap<>();
                 imageMap.put("id",id);
                 imageMap.put("cID",rs.getInt("cID"));
@@ -244,23 +247,31 @@ public class TaskUtils {
             map = new HashMap<>();
             map.put("KMV",lastKMV);
             map.put("POL",lastRoleName);
+            map.put("STN",lastSTN);
             list.add(map);
 
             ps.close();
             conn.commit();
             conn.close();
 
-            if (pageNo < 0 ) pageNo = 0;
-            if (pageSize == 0) pageSize = 20;
 
-            if (pageNo*pageSize > list.size()) return null;
-            if ((pageNo+1) * pageSize > list.size()) list = list.subList(pageNo*pageSize,list.size());
-            else list = list.subList(pageNo*pageSize,(pageNo+1) * pageSize);
+            int endIndex = 20;
+            List<HashMap> pageList = new ArrayList<>();
+            for (int i = 0;i<list.size();i+=20){
+                if (i+20>list.size()) endIndex = (list.size()-1)%20;
+                HashMap pageMap = new HashMap();
+                pageMap.put("pageStartSTN",list.get(i).get("STN"));
+                pageMap.put("pageStartPOL",list.get(i).get("POL"));
+                pageMap.put("pageEndSTN",list.get(i+endIndex).get("STN"));
+                pageMap.put("pageEndPOL",list.get(i+endIndex).get("POL"));
+                pageMap.put("pageData",list.subList(i,i+endIndex));
+                pageList.add(pageMap);
+            }
+
 
             //重组数据，杆号下分相机分类-相机列表-图片列表
-
-            System.out.println("\n杆号信息："+ list.size() + " | "+JSON.toJSON(list));
-            return list;
+            System.out.println("\n杆号信息："+ pageList.size());
+            return pageList;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }

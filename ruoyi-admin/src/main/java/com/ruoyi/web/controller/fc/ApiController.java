@@ -212,13 +212,11 @@ public class ApiController extends BaseController {
         @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = Integer.class),
         @ApiImplicitParam(name = "startId", value = "站区起始id", required = true, dataType = "Int",  dataTypeClass = Integer.class),
         @ApiImplicitParam(name = "endId", value = "站区结束id", required = true, dataType = "Int",  dataTypeClass = Integer.class),
-        @ApiImplicitParam(name = "pageNo", value = "当前页码，默认0",  dataType = "Int",  dataTypeClass = Integer.class),
-        @ApiImplicitParam(name = "pageSize", value = "每页数据条数，默认20",  dataType = "Int",  dataTypeClass = Integer.class),
     })
     @ApiResponse
     @GetMapping("/getPolesByStation")
     @ResponseBody
-    public AjaxResult getPolesByStation(String taskPath,int startId,int endId,int pageNo,int pageSize)
+    public AjaxResult getPolesByStation(String taskPath,int startId,int endId)
     {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
@@ -227,7 +225,7 @@ public class ApiController extends BaseController {
             return new AjaxResult(-1,"未传入站区起止id","");
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
-        return new AjaxResult(0,"操作成功",TaskUtils.getRoleInfoByStation(decodeTaskName, startId, endId, pageNo, pageSize));
+        return new AjaxResult(0,"操作成功",TaskUtils.getRoleInfoByStation(decodeTaskName, startId, endId));
     }
 
 
@@ -334,7 +332,7 @@ public class ApiController extends BaseController {
     @ResponseBody
     public byte[] testImage(boolean isThumb) {
         byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""));
-        if (bb!=null)System.out.println("缓存中的图片："+bb.length/1024);
+        if (bb!=null)System.out.println("缓存中的图片："+bb.length/(1024 * 1024));
         if (bb == null){
             bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
             SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""),bb);
@@ -977,13 +975,6 @@ public class ApiController extends BaseController {
             for (FcRecord fcRecord1:list){
                 if (fcRecord1.getImgPath() == null || fcRecord1.getImgPath().isEmpty())continue;
                 no++;
-//                String defectLocate = "";
-//                try {
-//                    //获取相机分类
-//                    FcCamera camera = iFcCameraService.selectFcCameraById((long)fcRecord1.getCameraid());
-//                    defectLocate = camera.getTypeName();
-//                }catch (Exception e){}
-
 
                 exportRecords.add(new ExportRecordImage(
                         String.valueOf(no),

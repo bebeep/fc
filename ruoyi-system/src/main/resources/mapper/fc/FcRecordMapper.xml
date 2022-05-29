@@ -15,10 +15,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="starty"    column="startY"    />
         <result property="endx"    column="endX"    />
         <result property="endy"    column="endY"    />
-        <result property="componentNameId"    column="componentNameId"    />
-        <result property="componentDefectId"    column="componentDefectId"    />
-        <result property="defectTypeId"    column="defectTypeId"    />
-        <result property="defectLevelId"    column="defectLevelId"    />
+        <result property="componentName"    column="componentName"    />
+        <result property="componentDefect"    column="componentDefect"    />
+        <result property="defectType"    column="defectType"    />
+        <result property="defectLevel"    column="defectLevel"    />
         <result property="checkDate"    column="checkDate"    />
         <result property="STN"    column="STN"    />
         <result property="KMV"    column="KMV"    />
