@@ -237,7 +237,7 @@ public class TaskUtils {
                 HashMap<String,Object> imageMap = new HashMap<>();
                 imageMap.put("id",id);
                 imageMap.put("cID",rs.getInt("cID"));
-                imageMap.put("imgKey",rs.getLong("imgKey"));
+                imageMap.put("imgKey",String.valueOf(rs.getLong("imgKey")));
                 imageMap.put("DxInd",rs.getInt("DxInd"));
                 imageInfos.add(imageMap);
                 if (id  == endId) break;
@@ -255,7 +255,7 @@ public class TaskUtils {
             conn.close();
 
 
-            int endIndex = 20;
+            int endIndex = 19;
             List<HashMap> pageList = new ArrayList<>();
             for (int i = 0;i<list.size();i+=20){
                 if (i+20>list.size()) endIndex = (list.size()-1)%20;
@@ -283,7 +283,7 @@ public class TaskUtils {
      * 根据杆号获取所有图片信息
      * @return
      */
-    public static List<HashMap<String,Object>> getImages(String taskPath,String pole, List<HashMap> cameraList){
+    public static List<HashMap<String,Object>> getImages(String taskPath,String pole){
 
         String dbFilePath = getDbPath(taskPath);
 
@@ -306,7 +306,7 @@ public class TaskUtils {
                 map.put("POL",rs.getString("POL") );
                 map.put("KMV",rs.getDouble("KMV") );
                 map.put("cID",rs.getInt("cID") );
-                map.put("imgKey",rs.getLong("imgKey") );
+                map.put("imgKey",String.valueOf(rs.getLong("imgKey")));
                 map.put("DxInd",rs.getInt("DxInd") );
                 map.put("TIM",rs.getLong("TIM") );
                 map.put("SubDBID",rs.getInt("SubDBID") );
@@ -359,7 +359,7 @@ public class TaskUtils {
             conn.commit();
             conn.close();
 
-            System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024);
+            System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
             return isThumb?compressImage(imgContent,10):imgContent;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
@@ -528,7 +528,7 @@ public class TaskUtils {
                 lastGYKKMV = rs.getDouble("GYKKMV");
                 HashMap<String,Object> imageMap = new HashMap<>();
                 imageMap.put("cID",rs.getInt("cID"));
-                imageMap.put("imgKey",rs.getLong("imgKey"));
+                imageMap.put("imgKey",String.valueOf(rs.getLong("imgKey")));
                 imageMap.put("SubDBID",rs.getInt("SubDBID"));
                 imageInfos.add(imageMap);
             }

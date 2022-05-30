@@ -21,7 +21,7 @@ public class FcRecord extends BaseEntity
 
     /** 图片id */
     @Excel(name = "图片id")
-    private Long imgkey;
+    private String imgkey;
 
     /** 缺陷记录字符串 */
     @Excel(name = "缺陷记录字符串")
@@ -151,12 +151,12 @@ public class FcRecord extends BaseEntity
     {
         return id;
     }
-    public void setImgkey(Long imgkey) 
+    public void setImgkey(String imgkey)
     {
         this.imgkey = imgkey;
     }
 
-    public Long getImgkey() 
+    public String getImgkey()
     {
         return imgkey;
     }
@@ -250,11 +250,11 @@ public class FcRecord extends BaseEntity
     }
 
 
-    public FcRecord(Long imgkey) {
+    public FcRecord(String imgkey) {
         this.imgkey = imgkey;
     }
 
-    public FcRecord(Long imgkey,
+    public FcRecord(String imgkey,
                     String content,
                     String taskpath,
                     String pole,

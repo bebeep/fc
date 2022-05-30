@@ -110,6 +110,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter
                 .antMatchers("/api/user/login").anonymous()
                 .antMatchers("/api/test**").anonymous()
                 .antMatchers("/api/**/test**").anonymous()
+                .antMatchers("/api/getSingleImage").anonymous()
                 .antMatchers("/swagger-ui.html").anonymous()
                 .antMatchers("/swagger-resources/**").anonymous()
                 .antMatchers("/webjars/**").anonymous()

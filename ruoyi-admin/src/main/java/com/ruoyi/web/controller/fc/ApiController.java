@@ -239,7 +239,7 @@ public class ApiController extends BaseController {
     @ApiResponse
     @PostMapping("/getImages")
     @ResponseBody
-    public AjaxResult getImages(String taskPath,String pole, int cameraTypeId)
+    public AjaxResult getImages(String taskPath,String pole, @RequestParam(value = "cameraTypeId",required = false,defaultValue = "0")int cameraTypeId)
     {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
@@ -247,8 +247,6 @@ public class ApiController extends BaseController {
         if(pole.isEmpty()){
             return new AjaxResult(-1,"杆号不能为空","");
         }
-
-
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
 
         List<HashMap> allCameraList = getCameraList();
@@ -260,10 +258,7 @@ public class ApiController extends BaseController {
             }
         }else cameraList = allCameraList;
 
-
-
-
-        List<HashMap<String,Object>> list = TaskUtils.getImages(decodeTaskName,pole, cameraList);
+        List<HashMap<String,Object>> list = TaskUtils.getImages(decodeTaskName,pole);
         //重组数据，杆号下分相机分类-相机列表-图片列表
         List<HashMap<String,Object>> resultList = new ArrayList<>();
         for (HashMap cameraType:cameraList){
@@ -274,8 +269,7 @@ public class ApiController extends BaseController {
                 for (HashMap data:list){
                     int cID = (int) data.get("cID");
                     if (cID == cameraId){
-                        long imgKey = (long) data.get("imgKey");
-                        List<FcRecord> records = fcRecordService.selectFcRecordList(new FcRecord(imgKey));
+                        List<FcRecord> records = fcRecordService.selectFcRecordList(new FcRecord(data.get("imgKey").toString()));
                         data.put("records",records);
                         images.add(data);
                     }
@@ -298,9 +292,9 @@ public class ApiController extends BaseController {
         @ApiImplicitParam(name = "isThumb", value = "是否为缩略图",  dataType = "Boolean",  dataTypeClass = Boolean.class)
     })
     @ApiResponse
-    @PostMapping("/getSingleImage")
+    @GetMapping("/getSingleImage")
     @ResponseBody
-    public byte[] getSingleImage(String taskPath,int cameraId, int subdbId,long imageId,boolean isThumb)
+    public byte[] getSingleImage(String taskPath,int cameraId, int subdbId,long imageId,@RequestParam(value = "isThumb",required = false,defaultValue = "false")boolean isThumb)
     {
         if(taskPath.isEmpty()){
             return null;
@@ -332,7 +326,7 @@ public class ApiController extends BaseController {
     @ResponseBody
     public byte[] testImage(boolean isThumb) {
         byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""));
-        if (bb!=null)System.out.println("缓存中的图片："+bb.length/(1024 * 1024));
+        if (bb!=null)System.out.println("缓存中的图片："+bb.length/(1024 * 1024)+"kb");
         if (bb == null){
             bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
             SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""),bb);
@@ -368,7 +362,7 @@ public class ApiController extends BaseController {
     {
         try {
             fcRecordService.insertFcRecord(new FcRecord(
-                    jsonParam.getLong("imgKey"),
+                    jsonParam.getString("imgKey"),
                     jsonParam.getString("content"),
                     jsonParam.getString("taskPath"),
                     jsonParam.getString("pole"),
@@ -394,10 +388,10 @@ public class ApiController extends BaseController {
 
 
     @ApiOperation("获取单张图片的缺陷信息")
-    @ApiImplicitParam(name = "imgKey", value = "图片id", required = true, dataType = "Long",  dataTypeClass = Long.class)
+    @ApiImplicitParam(name = "imgKey", value = "图片id", required = true, dataType = "String",  dataTypeClass = String.class)
     @GetMapping("/getSingleDefectInfo")
     @ResponseBody
-    public AjaxResult getSingleDefectInfo(long imgKey) {
+    public AjaxResult getSingleDefectInfo(String imgKey) {
         try{
             return new AjaxResult(0,"操作成功",JSONObject.toJSON(fcRecordService.selectFcRecordList(new FcRecord(imgKey))));
         }catch (Exception e){
@@ -411,7 +405,7 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "pole", value = "杆号",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "cameraId", value = "相机id",  dataType = "Int",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "imgKey", value = "图片id",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "imgKey", value = "图片id",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "content", value = "缺陷内容",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "startX", value = "坐标1 x",  dataType = "Int",  dataTypeClass = Integer.class),
             @ApiImplicitParam(name = "startY", value = "坐标1 y",  dataType = "Int",  dataTypeClass = Integer.class),
@@ -433,7 +427,7 @@ public class ApiController extends BaseController {
         try{
 
             FcRecord record = new FcRecord(
-                    jsonParam.getLong("imgKey"),
+                    jsonParam.getString("imgKey"),
                     jsonParam.getString("content"),
                     jsonParam.getString("taskPath"),
                     jsonParam.getString("pole"),
@@ -577,21 +571,23 @@ public class ApiController extends BaseController {
 
     @ApiOperation("获取缺陷信息列表")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true, dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "pole", value = "杆号",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "content", value = "缺陷内容",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "componentDefect", value = "缺陷部件",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "defectType", value = "缺陷类型",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "defectLevel", value = "缺陷等级",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
-//            @ApiImplicitParam(name = "pageNo", value = "当前页码，默认0",  dataType = "Int",  dataTypeClass = Integer.class),
-//            @ApiImplicitParam(name = "pageSize", value = "每页数据条数，默认20",  dataType = "Int",  dataTypeClass = Integer.class),
     })
     @ApiResponse
     @GetMapping("/getDefectInfo")
     @ResponseBody
-    public AjaxResult getDefectInfo(String taskPath,String STN,String pole, String componentDefect,
-                                    String defectType, String defectLevel,String content) {
+    public AjaxResult getDefectInfo(String taskPath,@RequestParam(value = "STN",required = false)String STN,
+                                    @RequestParam(value = "pole",required = false)String pole,
+                                    @RequestParam(value = "componentDefect",required = false)String componentDefect,
+                                    @RequestParam(value = "defectType",required = false)String defectType,
+                                    @RequestParam(value = "defectLevel",required = false)String defectLevel,
+                                    @RequestParam(value = "content",required = false)String content) {
         if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
         try{
             FcRecord record = new FcRecord();
@@ -610,7 +606,7 @@ public class ApiController extends BaseController {
     }
 
     @ApiOperation("获取有缺陷的站区和杆号-下拉选择")
-    @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class)
+    @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class)
     @ApiResponse
     @GetMapping("/getDefectSTNAndPoles")
     @ResponseBody
@@ -644,7 +640,10 @@ public class ApiController extends BaseController {
     })
     @GetMapping("/getJHData")
     @ResponseBody
-    public AjaxResult getJHData(String taskPath,String currPole,int pageNo,int pageSize) {
+    public AjaxResult getJHData(String taskPath,
+                                @RequestParam(value = "currPole",required = false)String currPole,
+                                @RequestParam(value = "pageNo",required = false,defaultValue = "0")int pageNo,
+                                @RequestParam(value = "pageSize",required = false,defaultValue = "1000")int pageSize) {
         if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         if (pageSize == 0) pageSize = 1000;
@@ -698,8 +697,8 @@ public class ApiController extends BaseController {
     @ApiOperation("历史对比弹窗-获取照片")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "pole", value = "杆号",   dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "cameraId", value = "相机编号",  dataType = "Int",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "pole", value = "杆号",  required = true,dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "cameraId", value = "相机编号", required = true,dataType = "Int",  dataTypeClass = Integer.class),
     })
     @GetMapping("/getImagesByCamera")
     @ResponseBody
@@ -733,7 +732,7 @@ public class ApiController extends BaseController {
             conn.close();
 
             for (HashMap map :imgs ){
-                List<FcRecord> records  = fcRecordService.selectFcRecordList(new FcRecord((Long) map.get("imgKey")));
+                List<FcRecord> records  = fcRecordService.selectFcRecordList(new FcRecord(map.get("imgKey").toString()));
                 if (records!=null && records.size()>0) map.put("records",records);
             }
 
@@ -782,10 +781,10 @@ public class ApiController extends BaseController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "oldPole", value = "原始杆号",required = true,   dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "newPole", value = "修改后的杆号", dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "newKmv", value = "修改后的公里标", dataType = "Double",  dataTypeClass = Double.class),
-            @ApiImplicitParam(name = "newStation", value = "修改后的的站区", dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "isPoleExist", value = "修改后的的杆号是否已存在", dataType = "Boolean",  dataTypeClass = Boolean.class),
+            @ApiImplicitParam(name = "newPole", value = "修改后的杆号",required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "newKmv", value = "修改后的公里标", required = true,dataType = "Double",  dataTypeClass = Double.class),
+            @ApiImplicitParam(name = "newStation", value = "修改后的的站区",required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "isPoleExist", value = "修改后的的杆号是否已存在",required = true,dataType = "Boolean",  dataTypeClass = Boolean.class),
     })
     @PostMapping("/revise/updateData")
     @ResponseBody
@@ -836,11 +835,11 @@ public class ApiController extends BaseController {
 
     @ApiOperation("批量移动杆号")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "movePoles", value = "选中的杆号集合,用逗号拼接",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "asc", value = "右移为true，左移为false",  dataType = "Boolean",  dataTypeClass = Boolean.class),
-            @ApiImplicitParam(name = "moveCount", value = "移动的格数，默认1",  dataType = "Integer",  dataTypeClass = Integer.class),
-            @ApiImplicitParam(name = "targetPole", value = "目标位置的杆号，如果是首尾，则传null或者''",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "movePoles", value = "选中的杆号集合,用逗号拼接",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "asc", value = "右移为true，左移为false",required = true,  dataType = "Boolean",  dataTypeClass = Boolean.class),
+            @ApiImplicitParam(name = "moveCount", value = "移动的格数，默认1", required = true, dataType = "Integer",  dataTypeClass = Integer.class),
+            @ApiImplicitParam(name = "targetPole", value = "目标位置的杆号，如果是首尾，则传null或者''", required = true, dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @PostMapping("/revise/updateMultiData")
@@ -893,11 +892,11 @@ public class ApiController extends BaseController {
 
     @ApiOperation("导出报表-缺陷信息数据")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "tableName", value = "表格名称",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "paraName", value = "段别",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "workShop", value = "车间",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "workArea", value = "工区",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "paraName", value = "段别", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "workShop", value = "车间",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "workArea", value = "工区",required = true,  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @GetMapping("/export/Defect")
@@ -948,9 +947,9 @@ public class ApiController extends BaseController {
 
     @ApiOperation("导出报表-4C图像缺陷")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "taskPath", value = "任务全路径",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "tableName", value = "表格名称",  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "railwayAdmin", value = "铁路局",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "tableName", value = "表格名称", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "railwayAdmin", value = "铁路局",required = true,  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @GetMapping("/export/DefectImage")
@@ -1002,17 +1001,17 @@ public class ApiController extends BaseController {
 
     @ApiOperation("上传缺陷图片")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "file", value = "文件",  dataType = "MultipartFile",  dataTypeClass = MultipartFile.class),
-            @ApiImplicitParam(name = "imgKey", value = "图片key",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "file", value = "文件", required = true, dataType = "MultipartFile",  dataTypeClass = MultipartFile.class),
+            @ApiImplicitParam(name = "imgKey", value = "图片key", required = true, dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @PostMapping("/upload")
-    public AjaxResult uploadFile(MultipartFile file,Long imgKey)
+    public AjaxResult uploadFile(MultipartFile file,String imgKey)
     {
         try
         {
             // 上传并返回新文件名称
-            String fileName = FileUploadUtils.uploadDefectImage(imgKey.toString(), file);
+            String fileName = FileUploadUtils.uploadDefectImage(imgKey, file);
             if (!fileName.isEmpty()){
                 //更新到缺陷表
                 FcRecord record = new FcRecord(imgKey);

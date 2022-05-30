@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FcScanStatusMapper">
+    
+    <resultMap type="FcScanStatus" id="FcScanStatusResult">
+        <result property="id"    column="id"    />
+        <result property="scanedpoles"    column="scanedPoles"    />
+        <result property="userid"    column="userId"    />
+        <result property="currdate"    column="currdate"    />
+        <result property="currtask"    column="currTask"    />
+        <result property="currstartstn"    column="currStartSTN"    />
+        <result property="currendstn"    column="currEndSTN"    />
+        <result property="currstartstnid"    column="currStartSTNId"    />
+        <result property="currendstnid"    column="currEndSTNId"    />
+        <result property="currcameratype"    column="currCameraType"    />
+        <result property="currpolespage"    column="currPolesPage"    />
+        <result property="currpole"    column="currPole"    />
+    </resultMap>
+
+    <sql id="selectFcScanStatusVo">
+        select id, scanedPoles, userId, currdate, currTask, currStartSTN, currEndSTN, currStartSTNId, currEndSTNId, currCameraType, currPolesPage, currPole from fc_scan_status
+    </sql>
+
+    <select id="selectFcScanStatusList" parameterType="FcScanStatus" resultMap="FcScanStatusResult">
+        <include refid="selectFcScanStatusVo"/>
+        <where>  
+            <if test="scanedpoles != null  and scanedpoles != ''"> and scanedPoles = #{scanedpoles}</if>
+            <if test="userid != null "> and userId = #{userid}</if>
+            <if test="currdate != null  and currdate != ''"> and currdate = #{currdate}</if>
+            <if test="currtask != null  and currtask != ''"> and currTask = #{currtask}</if>
+            <if test="currstartstn != null  and currstartstn != ''"> and currStartSTN = #{currstartstn}</if>
+            <if test="currendstn != null  and currendstn != ''"> and currEndSTN = #{currendstn}</if>
+            <if test="currstartstnid != null "> and currStartSTNId = #{currstartstnid}</if>
+            <if test="currendstnid != null "> and currEndSTNId = #{currendstnid}</if>
+            <if test="currcameratype != null  and currcameratype != ''"> and currCameraType = #{currcameratype}</if>
+            <if test="currpolespage != null  and currpolespage != ''"> and currPolesPage = #{currpolespage}</if>
+            <if test="currpole != null  and currpole != ''"> and currPole = #{currpole}</if>
+        </where>
+    </select>
+    
+    <select id="selectFcScanStatusById" parameterType="Long" resultMap="FcScanStatusResult">
+        <include refid="selectFcScanStatusVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertFcScanStatus" parameterType="FcScanStatus" useGeneratedKeys="true" keyProperty="id">
+        insert into fc_scan_status
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="scanedpoles != null">scanedPoles,</if>
+            <if test="userid != null">userId,</if>
+            <if test="currdate != null">currdate,</if>
+            <if test="currtask != null">currTask,</if>
+            <if test="currstartstn != null">currStartSTN,</if>
+            <if test="currendstn != null">currEndSTN,</if>
+            <if test="currstartstnid != null">currStartSTNId,</if>
+            <if test="currendstnid != null">currEndSTNId,</if>
+            <if test="currcameratype != null">currCameraType,</if>
+            <if test="currpolespage != null">currPolesPage,</if>
+            <if test="currpole != null">currPole,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="scanedpoles != null">#{scanedpoles},</if>
+            <if test="userid != null">#{userid},</if>
+            <if test="currdate != null">#{currdate},</if>
+            <if test="currtask != null">#{currtask},</if>
+            <if test="currstartstn != null">#{currstartstn},</if>
+            <if test="currendstn != null">#{currendstn},</if>
+            <if test="currstartstnid != null">#{currstartstnid},</if>
+            <if test="currendstnid != null">#{currendstnid},</if>
+            <if test="currcameratype != null">#{currcameratype},</if>
+            <if test="currpolespage != null">#{currpolespage},</if>
+            <if test="currpole != null">#{currpole},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFcScanStatus" parameterType="FcScanStatus">
+        update fc_scan_status
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="scanedpoles != null">scanedPoles = CONCAT(scanedPoles,scanedpoles),</if>
+            <if test="userid != null">userId = #{userid},</if>
+            <if test="currdate != null">currdate = #{currdate},</if>
+            <if test="currtask != null">currTask = #{currtask},</if>
+            <if test="currstartstn != null">currStartSTN = #{currstartstn},</if>
+            <if test="currendstn != null">currEndSTN = #{currendstn},</if>
+            <if test="currstartstnid != null">currStartSTNId = #{currstartstnid},</if>
+            <if test="currendstnid != null">currEndSTNId = #{currendstnid},</if>
+            <if test="currcameratype != null">currCameraType = #{currcameratype},</if>
+            <if test="currpolespage != null">currPolesPage = #{currpolespage},</if>
+            <if test="currpole != null">currPole = #{currpole},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFcScanStatusById" parameterType="Long">
+        delete from fc_scan_status where id = #{id}
+    </delete>
+
+    <delete id="deleteFcScanStatusByIds" parameterType="String">
+        delete from fc_scan_status where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
