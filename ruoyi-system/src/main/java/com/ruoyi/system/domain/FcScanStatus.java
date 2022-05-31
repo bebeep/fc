@@ -44,11 +44,11 @@ public class FcScanStatus extends BaseEntity
 
     /** 站区开始id */
     @Excel(name = "站区开始id")
-    private Long currstartstnid;
+    private String currstartstnid;
 
     /** 站区结束id */
     @Excel(name = "站区结束id")
-    private Long currendstnid;
+    private String currendstnid;
 
     /** 智能定制-相机分类 */
     @Excel(name = "智能定制-相机分类")
@@ -125,21 +125,21 @@ public class FcScanStatus extends BaseEntity
     {
         return currendstn;
     }
-    public void setCurrstartstnid(Long currstartstnid) 
+    public void setCurrstartstnid(String currstartstnid)
     {
         this.currstartstnid = currstartstnid;
     }
 
-    public Long getCurrstartstnid() 
+    public String getCurrstartstnid()
     {
         return currstartstnid;
     }
-    public void setCurrendstnid(Long currendstnid) 
+    public void setCurrendstnid(String currendstnid)
     {
         this.currendstnid = currendstnid;
     }
 
-    public Long getCurrendstnid() 
+    public String getCurrendstnid()
     {
         return currendstnid;
     }
@@ -171,9 +171,40 @@ public class FcScanStatus extends BaseEntity
         return currpole;
     }
 
+    public FcScanStatus() {
+    }
 
     public FcScanStatus(Long userid) {
         this.userid = userid;
+    }
+
+    public FcScanStatus( Long userid,String scanedpoles) {
+        this.scanedpoles = scanedpoles;
+        this.userid = userid;
+    }
+
+
+    public FcScanStatus(
+            Long userId,
+            String currdate,
+            String currtask,
+            String currstartstn,
+            String currendstn,
+            String currstartstnid,
+            String currendstnid,
+            String currcameratype,
+            String currpolespage,
+            String currpole) {
+        this.userid = userId;
+        this.currdate = currdate;
+        this.currtask = currtask;
+        this.currstartstn = currstartstn;
+        this.currendstn = currendstn;
+        this.currstartstnid = currstartstnid;
+        this.currendstnid = currendstnid;
+        this.currcameratype = currcameratype;
+        this.currpolespage = currpolespage;
+        this.currpole = currpole;
     }
 
     @Override

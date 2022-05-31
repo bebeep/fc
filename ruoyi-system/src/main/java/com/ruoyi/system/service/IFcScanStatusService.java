@@ -43,6 +43,9 @@ public interface IFcScanStatusService
      */
     public int updateFcScanStatus(FcScanStatus fcScanStatus);
 
+
+    public int updateFcScanPoles(Long userId,String pole);
+
     /**
      * 批量删除状态记录
      * 

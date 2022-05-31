@@ -139,7 +139,7 @@ public class ApiController extends BaseController {
     public AjaxResult getAllTasks(String year)
     {
         try {
-            scanStatusService.insertFcScanStatus(new FcScanStatus(getLoginUser().getUserId()));
+            scanStatusService.insertFcScanStatus(new FcScanStatus(getUserId()));
         }catch (Exception e){}
 
         if (year.isEmpty()){
@@ -1032,21 +1032,77 @@ public class ApiController extends BaseController {
         return new AjaxResult(-1,"上传失败");
     }
 
-    @ApiOperation("更新浏览记录")
+
+
+    @ApiOperation("更新浏览记录-json格式 只传需要更新的字段即可")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "imgKey", value = "图片key",dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currDate", value = "第一步选择的日期",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currTask", value = "当前任务路径", dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currStartSTN", value = "开始站区", dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currEndSTN", value = "结束站区",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currStartSTNId", value = "开始站区的startId字段",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currEndSTNId", value = "结束站区的endId字段",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currCameraType", value = "智能定制（相机分类）",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currPolesPage", value = "当前杆号分组index",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currPole", value = "当前杆号",  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
-    @PostMapping("/testupdateScan")
-    public AjaxResult updateScan(@RequestBody(required = false) JSONObject jsonParam)
+    @PostMapping("/updateScan")
+    public AjaxResult updateScan(@RequestBody JSONObject jsonParam)
     {
         try
         {
-            int result = scanStatusService.updateFcScanStatus(new FcScanStatus(5));
+
+            scanStatusService.updateFcScanPoles(getUserId(),jsonParam.getString("currPole"));//单独追加杆号
+
+            FcScanStatus status = new FcScanStatus(
+                    getUserId(),
+                    jsonParam.getString("currDate"),
+                    jsonParam.getString("currTask"),
+                    jsonParam.getString("currStartSTN"),
+                    jsonParam.getString("currEndSTN"),
+                    jsonParam.getString("currStartSTNId"),
+                    jsonParam.getString("currEndSTNId"),
+                    jsonParam.getString("currCameraType"),
+                    jsonParam.getString("currPolesPage"),
+                    jsonParam.getString("currPole")
+            );
+
+            int result = scanStatusService.updateFcScanStatus(status);
             if (result>0)return new AjaxResult(0,"更新成功");
         }
         catch (Exception e) {e.printStackTrace();}
         return new AjaxResult(-1,"更新失败");
+    }
+
+
+    @ApiOperation("获取浏览记录-建议在登录成功之后调用")
+    @ApiResponse
+    @GetMapping("/getScanHistory")
+    public AjaxResult getScanHistory()
+    {
+        try
+        {
+
+            List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
+            if (list!=null && list.size()>0){
+                FcScanStatus status = list.get(0);
+                HashMap map = new HashMap();
+                map.put("scanedpoles",status.getScanedpoles());
+                map.put("currdate",status.getCurrdate());
+                map.put("currtask",status.getCurrtask());
+                map.put("currstartstn",status.getCurrstartstn());
+                map.put("currendstn",status.getCurrendstn());
+                map.put("currstartstnid",status.getCurrstartstnid());
+                map.put("currendstnid",status.getCurrendstnid());
+                map.put("currcameratype",status.getCurrcameratype());
+                map.put("currpolespage",status.getCurrpolespage());
+                map.put("currpole",status.getCurrpole());
+                return new AjaxResult(0,"操作成功",map);
+            }
+        }
+        catch (Exception e) {e.printStackTrace();}
+        return new AjaxResult(-1,"操作失败");
     }
 
 

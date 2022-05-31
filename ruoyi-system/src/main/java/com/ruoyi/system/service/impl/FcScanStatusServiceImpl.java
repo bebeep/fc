@@ -64,9 +64,15 @@ public class FcScanStatusServiceImpl implements IFcScanStatusService
     @Override
     public int updateFcScanStatus(FcScanStatus fcScanStatus)
     {
-        fcScanStatus.setScanedpoles(","+fcScanStatus.getScanedpoles());
         return fcScanStatusMapper.updateFcScanStatus(fcScanStatus);
     }
+
+    @Override
+    public int updateFcScanPoles(Long userId,String pole) {
+        if (userId == 0 || pole.isEmpty()) return 0;
+        return fcScanStatusMapper.updateFcScanPoles(userId.toString(),pole);
+    }
+
 
     /**
      * 批量删除状态记录

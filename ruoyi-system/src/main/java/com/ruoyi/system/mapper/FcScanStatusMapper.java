@@ -2,6 +2,7 @@ package com.ruoyi.system.mapper;
 
 import java.util.List;
 import com.ruoyi.system.domain.FcScanStatus;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 状态记录Mapper接口
@@ -42,6 +43,9 @@ public interface FcScanStatusMapper
      * @return 结果
      */
     public int updateFcScanStatus(FcScanStatus fcScanStatus);
+
+
+    public int updateFcScanPoles(@Param(value="userId")String userId, @Param(value="pole")String pole);
 
     /**
      * 删除状态记录

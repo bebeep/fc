@@ -32,8 +32,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="currtask != null  and currtask != ''"> and currTask = #{currtask}</if>
             <if test="currstartstn != null  and currstartstn != ''"> and currStartSTN = #{currstartstn}</if>
             <if test="currendstn != null  and currendstn != ''"> and currEndSTN = #{currendstn}</if>
-            <if test="currstartstnid != null "> and currStartSTNId = #{currstartstnid}</if>
-            <if test="currendstnid != null "> and currEndSTNId = #{currendstnid}</if>
+            <if test="currstartstnid != null and currstartstnid != ''"> and currStartSTNId = #{currstartstnid}</if>
+            <if test="currendstnid != null  and currendstnid != ''"> and currEndSTNId = #{currendstnid}</if>
             <if test="currcameratype != null  and currcameratype != ''"> and currCameraType = #{currcameratype}</if>
             <if test="currpolespage != null  and currpolespage != ''"> and currPolesPage = #{currpolespage}</if>
             <if test="currpole != null  and currpole != ''"> and currPole = #{currpole}</if>
@@ -55,22 +55,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateFcScanStatus" parameterType="FcScanStatus">
         update fc_scan_status
         <trim prefix="SET" suffixOverrides=",">
-            <if test="userid != null">userId = #{userid},</if>
-            <if test="currdate != null">currdate = #{currdate},</if>
-            <if test="currtask != null">currTask = #{currtask},</if>
-            <if test="currstartstn != null">currStartSTN = #{currstartstn},</if>
-            <if test="currendstn != null">currEndSTN = #{currendstn},</if>
-            <if test="currstartstnid != null">currStartSTNId = #{currstartstnid},</if>
-            <if test="currendstnid != null">currEndSTNId = #{currendstnid},</if>
-            <if test="currcameratype != null">currCameraType = #{currcameratype},</if>
-            <if test="currpolespage != null">currPolesPage = #{currpolespage},</if>
-            <if test="currpole != null">currPole = #{currpole},</if>
+            <if test="userid != null and userid != ''">userid = #{userid},</if>
+            <if test="currdate != null and currdate != ''">currdate = #{currdate},</if>
+            <if test="currtask != null and currtask != ''">currTask = #{currtask},</if>
+            <if test="currstartstn != null and currstartstn != ''">currStartSTN = #{currstartstn},</if>
+            <if test="currendstn != null and currendstn != ''">currEndSTN = #{currendstn},</if>
+            <if test="currstartstnid != null  and currstartstnid != ''">currStartSTNId = #{currstartstnid},</if>
+            <if test="currendstnid != null and currendstnid != ''">currEndSTNId = #{currendstnid},</if>
+            <if test="currcameratype != null and currcameratype != ''">currCameraType = #{currcameratype},</if>
+            <if test="currpolespage != null and currpolespage != ''">currPolesPage = #{currpolespage},</if>
+            <if test="currpole != null   and currpole != ''" >currPole = #{currpole},</if>
         </trim>
-        where id = #{id}
+        where userid = #{userid}
     </update>
 
-    <update id="updateFcScanPoles" parameterType="FcScanStatus">
-        update fc_scan_status set scanedPoles =concat(scanedPoles,',',#{scanedPoles}) where locate(#{scanedPoles},scanedPoles)=0 AND userId = #{userId}
+    <update id="updateFcScanPoles" parameterType="String">
+        update fc_scan_status set scanedPoles =concat(scanedPoles,',',#{pole}) where locate(#{pole},scanedPoles)=0 AND userId = #{userId}
     </update>
 
     <delete id="deleteFcScanStatusById" parameterType="Long">
