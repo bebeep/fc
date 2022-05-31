@@ -17,6 +17,7 @@ import com.ruoyi.framework.web.service.SysLoginService;
 import com.ruoyi.system.domain.FcCamera;
 import com.ruoyi.system.domain.FcCameraType;
 import com.ruoyi.system.domain.FcRecord;
+import com.ruoyi.system.domain.FcScanStatus;
 import com.ruoyi.system.service.*;
 import com.ruoyi.web.controller.tool.ExportRecord;
 import com.ruoyi.web.controller.tool.ExportRecordImage;
@@ -64,6 +65,9 @@ public class ApiController extends BaseController {
 
     @Autowired
     private ISysDictTypeService dictTypeService;
+
+    @Autowired
+    private IFcScanStatusService scanStatusService;
 
 
     @ApiOperation("登录")
@@ -134,6 +138,10 @@ public class ApiController extends BaseController {
     @ResponseBody
     public AjaxResult getAllTasks(String year)
     {
+        try {
+            scanStatusService.insertFcScanStatus(new FcScanStatus(getLoginUser().getUserId()));
+        }catch (Exception e){}
+
         if (year.isEmpty()){
            return new AjaxResult(-1,"年份不能为空","");
         }
@@ -1023,4 +1031,23 @@ public class ApiController extends BaseController {
         catch (Exception e) {e.printStackTrace();}
         return new AjaxResult(-1,"上传失败");
     }
+
+    @ApiOperation("更新浏览记录")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "imgKey", value = "图片key",dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @PostMapping("/testupdateScan")
+    public AjaxResult updateScan(@RequestBody(required = false) JSONObject jsonParam)
+    {
+        try
+        {
+            int result = scanStatusService.updateFcScanStatus(new FcScanStatus(5));
+            if (result>0)return new AjaxResult(0,"更新成功");
+        }
+        catch (Exception e) {e.printStackTrace();}
+        return new AjaxResult(-1,"更新失败");
+    }
+
+
 }

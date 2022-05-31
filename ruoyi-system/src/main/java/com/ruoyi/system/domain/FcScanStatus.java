@@ -85,7 +85,7 @@ public class FcScanStatus extends BaseEntity
         this.userid = userid;
     }
 
-    public Long getUserid() 
+    public Long getUserid()
     {
         return userid;
     }
@@ -169,6 +169,11 @@ public class FcScanStatus extends BaseEntity
     public String getCurrpole() 
     {
         return currpole;
+    }
+
+
+    public FcScanStatus(Long userid) {
+        this.userid = userid;
     }
 
     @Override

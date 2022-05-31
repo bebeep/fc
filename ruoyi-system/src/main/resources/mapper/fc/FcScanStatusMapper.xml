@@ -46,39 +46,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
         
     <insert id="insertFcScanStatus" parameterType="FcScanStatus" useGeneratedKeys="true" keyProperty="id">
-        insert into fc_scan_status
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="scanedpoles != null">scanedPoles,</if>
-            <if test="userid != null">userId,</if>
-            <if test="currdate != null">currdate,</if>
-            <if test="currtask != null">currTask,</if>
-            <if test="currstartstn != null">currStartSTN,</if>
-            <if test="currendstn != null">currEndSTN,</if>
-            <if test="currstartstnid != null">currStartSTNId,</if>
-            <if test="currendstnid != null">currEndSTNId,</if>
-            <if test="currcameratype != null">currCameraType,</if>
-            <if test="currpolespage != null">currPolesPage,</if>
-            <if test="currpole != null">currPole,</if>
-         </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="scanedpoles != null">#{scanedpoles},</if>
-            <if test="userid != null">#{userid},</if>
-            <if test="currdate != null">#{currdate},</if>
-            <if test="currtask != null">#{currtask},</if>
-            <if test="currstartstn != null">#{currstartstn},</if>
-            <if test="currendstn != null">#{currendstn},</if>
-            <if test="currstartstnid != null">#{currstartstnid},</if>
-            <if test="currendstnid != null">#{currendstnid},</if>
-            <if test="currcameratype != null">#{currcameratype},</if>
-            <if test="currpolespage != null">#{currpolespage},</if>
-            <if test="currpole != null">#{currpole},</if>
-         </trim>
+        INSERT INTO fc_scan_status (userid)
+        SELECT #{userid}
+        from DUAL
+        where not exists(select userid from fc_scan_status where userId=#{userid});
     </insert>
 
     <update id="updateFcScanStatus" parameterType="FcScanStatus">
         update fc_scan_status
         <trim prefix="SET" suffixOverrides=",">
-            <if test="scanedpoles != null">scanedPoles = CONCAT(scanedPoles,scanedpoles),</if>
             <if test="userid != null">userId = #{userid},</if>
             <if test="currdate != null">currdate = #{currdate},</if>
             <if test="currtask != null">currTask = #{currtask},</if>
@@ -91,6 +67,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="currpole != null">currPole = #{currpole},</if>
         </trim>
         where id = #{id}
+    </update>
+
+    <update id="updateFcScanPoles" parameterType="FcScanStatus">
+        update fc_scan_status set scanedPoles =concat(scanedPoles,',',#{scanedPoles}) where locate(#{scanedPoles},scanedPoles)=0 AND userId = #{userId}
     </update>
 
     <delete id="deleteFcScanStatusById" parameterType="Long">
