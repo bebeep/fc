@@ -1047,6 +1047,9 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "currCameraType", value = "智能定制（相机分类）",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "currPolesPage", value = "当前杆号分组index",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "currPole", value = "当前杆号",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currDirect", value = "当前相机方向",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "currCameraRealType", value = "当前相机分类",  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "imgKey", value = "当前imgKey",  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @PostMapping("/updateScan")
@@ -1067,7 +1070,10 @@ public class ApiController extends BaseController {
                     jsonParam.getString("currEndSTNId"),
                     jsonParam.getString("currCameraType"),
                     jsonParam.getString("currPolesPage"),
-                    jsonParam.getString("currPole")
+                    jsonParam.getString("currPole"),
+                    jsonParam.getString("currDirect"),
+                    jsonParam.getString("currCameraRealType"),
+                    jsonParam.getString("imgKey")
             );
 
             int result = scanStatusService.updateFcScanStatus(status);
@@ -1090,16 +1096,19 @@ public class ApiController extends BaseController {
             if (list!=null && list.size()>0){
                 FcScanStatus status = list.get(0);
                 HashMap map = new HashMap();
-                map.put("scanedpoles",status.getScanedpoles());
-                map.put("currdate",status.getCurrdate());
-                map.put("currtask",status.getCurrtask());
-                map.put("currstartstn",status.getCurrstartstn());
-                map.put("currendstn",status.getCurrendstn());
-                map.put("currstartstnid",status.getCurrstartstnid());
-                map.put("currendstnid",status.getCurrendstnid());
-                map.put("currcameratype",status.getCurrcameratype());
-                map.put("currpolespage",status.getCurrpolespage());
-                map.put("currpole",status.getCurrpole());
+                map.put("scanedPoles",status.getScanedpoles());
+                map.put("currDate",status.getCurrdate());
+                map.put("currTask",status.getCurrtask());
+                map.put("currStartSTN",status.getCurrstartstn());
+                map.put("currEndSTN",status.getCurrendstn());
+                map.put("currStartSTNId",status.getCurrstartstnid());
+                map.put("currEndSTNId",status.getCurrendstnid());
+                map.put("currCameraType",status.getCurrcameratype());
+                map.put("currPolesPage",status.getCurrpolespage());
+                map.put("currPole",status.getCurrpole());
+                map.put("currDirect",status.getCurrDirect());
+                map.put("currCameraRealType",status.getCurrCameraRealType());
+                map.put("imgKey",status.getImgKey());
                 return new AjaxResult(0,"操作成功",map);
             }
         }

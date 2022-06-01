@@ -17,10 +17,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="currcameratype"    column="currCameraType"    />
         <result property="currpolespage"    column="currPolesPage"    />
         <result property="currpole"    column="currPole"    />
+        <result property="currDirect"    column="currDirect"    />
+        <result property="currCameraRealType"    column="currCameraRealType"    />
+        <result property="imgKey"    column="imgKey"    />
     </resultMap>
 
     <sql id="selectFcScanStatusVo">
-        select id, scanedPoles, userId, currdate, currTask, currStartSTN, currEndSTN, currStartSTNId, currEndSTNId, currCameraType, currPolesPage, currPole from fc_scan_status
+        select * from fc_scan_status
     </sql>
 
     <select id="selectFcScanStatusList" parameterType="FcScanStatus" resultMap="FcScanStatusResult">
@@ -37,6 +40,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="currcameratype != null  and currcameratype != ''"> and currCameraType = #{currcameratype}</if>
             <if test="currpolespage != null  and currpolespage != ''"> and currPolesPage = #{currpolespage}</if>
             <if test="currpole != null  and currpole != ''"> and currPole = #{currpole}</if>
+            <if test="currDirect != null  and currDirect != ''"> and currDirect = #{currDirect}</if>
+            <if test="currCameraRealType != null  and currCameraRealType != ''"> and currCameraRealType = #{currCameraRealType}</if>
+            <if test="imgKey != null  and imgKey != ''"> and imgKey = #{imgKey}</if>
         </where>
     </select>
     
@@ -65,6 +71,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="currcameratype != null and currcameratype != ''">currCameraType = #{currcameratype},</if>
             <if test="currpolespage != null and currpolespage != ''">currPolesPage = #{currpolespage},</if>
             <if test="currpole != null   and currpole != ''" >currPole = #{currpole},</if>
+            <if test="currDirect != null   and currDirect != ''" >currDirect = #{currDirect},</if>
+            <if test="currCameraRealType != null   and currCameraRealType != ''" >currCameraRealType = #{currCameraRealType},</if>
+            <if test="imgKey != null   and imgKey != ''" >imgKey = #{imgKey},</if>
         </trim>
         where userid = #{userid}
     </update>

@@ -61,6 +61,9 @@ public class FcScanStatus extends BaseEntity
     /** 当前杆号 */
     @Excel(name = "当前杆号")
     private String currpole;
+    private String currDirect;
+    private String currCameraRealType;
+    private String imgKey;
 
     public void setId(Long id) 
     {
@@ -89,39 +92,39 @@ public class FcScanStatus extends BaseEntity
     {
         return userid;
     }
-    public void setCurrdate(String currdate) 
+    public void setCurrdate(String currdate)
     {
         this.currdate = currdate;
     }
 
-    public String getCurrdate() 
+    public String getCurrdate()
     {
         return currdate;
     }
-    public void setCurrtask(String currtask) 
+    public void setCurrtask(String currtask)
     {
         this.currtask = currtask;
     }
 
-    public String getCurrtask() 
+    public String getCurrtask()
     {
         return currtask;
     }
-    public void setCurrstartstn(String currstartstn) 
+    public void setCurrstartstn(String currstartstn)
     {
         this.currstartstn = currstartstn;
     }
 
-    public String getCurrstartstn() 
+    public String getCurrstartstn()
     {
         return currstartstn;
     }
-    public void setCurrendstn(String currendstn) 
+    public void setCurrendstn(String currendstn)
     {
         this.currendstn = currendstn;
     }
 
-    public String getCurrendstn() 
+    public String getCurrendstn()
     {
         return currendstn;
     }
@@ -143,32 +146,57 @@ public class FcScanStatus extends BaseEntity
     {
         return currendstnid;
     }
-    public void setCurrcameratype(String currcameratype) 
+    public void setCurrcameratype(String currcameratype)
     {
         this.currcameratype = currcameratype;
     }
 
-    public String getCurrcameratype() 
+    public String getCurrcameratype()
     {
         return currcameratype;
     }
-    public void setCurrpolespage(String currpolespage) 
+    public void setCurrpolespage(String currpolespage)
     {
         this.currpolespage = currpolespage;
     }
 
-    public String getCurrpolespage() 
+    public String getCurrpolespage()
     {
         return currpolespage;
     }
-    public void setCurrpole(String currpole) 
+    public void setCurrpole(String currpole)
     {
         this.currpole = currpole;
     }
 
-    public String getCurrpole() 
+    public String getCurrpole()
     {
         return currpole;
+    }
+
+
+    public String getCurrDirect() {
+        return currDirect;
+    }
+
+    public void setCurrDirect(String currDirect) {
+        this.currDirect = currDirect;
+    }
+
+    public String getCurrCameraRealType() {
+        return currCameraRealType;
+    }
+
+    public void setCurrCameraRealType(String currCameraRealType) {
+        this.currCameraRealType = currCameraRealType;
+    }
+
+    public String getImgKey() {
+        return imgKey;
+    }
+
+    public void setImgKey(String imgKey) {
+        this.imgKey = imgKey;
     }
 
     public FcScanStatus() {
@@ -185,7 +213,7 @@ public class FcScanStatus extends BaseEntity
 
 
     public FcScanStatus(
-            Long userId,
+            Long userid,
             String currdate,
             String currtask,
             String currstartstn,
@@ -194,8 +222,11 @@ public class FcScanStatus extends BaseEntity
             String currendstnid,
             String currcameratype,
             String currpolespage,
-            String currpole) {
-        this.userid = userId;
+            String currpole,
+            String currDirect,
+            String currCameraRealType,
+            String imgKey) {
+        this.userid = userid;
         this.currdate = currdate;
         this.currtask = currtask;
         this.currstartstn = currstartstn;
@@ -205,6 +236,9 @@ public class FcScanStatus extends BaseEntity
         this.currcameratype = currcameratype;
         this.currpolespage = currpolespage;
         this.currpole = currpole;
+        this.currDirect = currDirect;
+        this.currCameraRealType = currCameraRealType;
+        this.imgKey = imgKey;
     }
 
     @Override
