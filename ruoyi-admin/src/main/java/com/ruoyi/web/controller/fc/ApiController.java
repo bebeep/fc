@@ -14,6 +14,7 @@ import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.web.service.SysLoginService;
+import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.domain.FcCamera;
 import com.ruoyi.system.domain.FcCameraType;
 import com.ruoyi.system.domain.FcRecord;
@@ -69,6 +70,8 @@ public class ApiController extends BaseController {
     @Autowired
     private IFcScanStatusService scanStatusService;
 
+    @Autowired
+    private TokenService tokenService;
 
     @ApiOperation("登录")
     @ApiImplicitParams({
@@ -906,7 +909,6 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "workShop", value = "车间",required = true,  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "workArea", value = "工区",required = true,  dataType = "String",  dataTypeClass = String.class),
     })
-    @ApiResponse
     @GetMapping("/export/Defect")
     @RepeatSubmit(interval = 2000,message = "禁止重复请求")
     public void exportDefect(HttpServletResponse response, String taskPath, String tableName, String paraName, String workShop, String workArea) {
@@ -915,7 +917,6 @@ public class ApiController extends BaseController {
 
         try{
 
-            LoginUser loginUser = getLoginUser();
 
 
             FcRecord fcRecord = new FcRecord();
@@ -942,15 +943,16 @@ public class ApiController extends BaseController {
                         fcRecord1.getDefectType(),
                         fcRecord1.getDefectLevel(),
                         fcRecord1.getContent(),
-                        loginUser.getUser().getNickName()+"/"+fcRecord1.getCheckDate()
+                        fcRecord1.getCheckDate()
                 ));
             }
             ExcelUtil<ExportRecord> util = new ExcelUtil(ExportRecord.class);
-            util.exportExcel(response, exportRecords, tableName.isEmpty()?("4C缺陷汇总表("+loginUser.getUser().getNickName()+")"):tableName);
+            util.exportExcel(response, exportRecords, tableName.isEmpty()?("4C缺陷汇总表"):tableName);
         }catch (Exception e){
             e.printStackTrace();
         }
     }
+
 
 
     @ApiOperation("导出报表-4C图像缺陷")
@@ -959,7 +961,6 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "tableName", value = "表格名称", required = true, dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "railwayAdmin", value = "铁路局",required = true,  dataType = "String",  dataTypeClass = String.class),
     })
-    @ApiResponse
     @GetMapping("/export/DefectImage")
     @RepeatSubmit(interval = 2000,message = "禁止重复请求")
     public void exportDefectImage(HttpServletResponse response, String taskPath, String tableName, String railwayAdmin) {
@@ -1003,6 +1004,7 @@ public class ApiController extends BaseController {
             e.printStackTrace();
         }
     }
+
 
 
 
