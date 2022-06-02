@@ -52,8 +52,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
         
     <insert id="insertFcScanStatus" parameterType="FcScanStatus" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO fc_scan_status (userid)
-        SELECT #{userid}
+        INSERT INTO fc_scan_status (userid,scanedPoles)
+        SELECT #{userid},''
         from DUAL
         where not exists(select userid from fc_scan_status where userId=#{userid});
     </insert>
