@@ -38,7 +38,6 @@ public class FileUploadUtils
     private static String defaultBaseDir = RuoYiConfig.getProfile();
 
 
-    public static String defectImagePath = "D:\\天窗数据\\缺陷图片";
 
     public static void setDefaultBaseDir(String defaultBaseDir)
     {
@@ -92,7 +91,7 @@ public class FileUploadUtils
     /**
      * 缺陷文件上传
      */
-    public static final String uploadDefectImage(String imgKey, MultipartFile file)
+    public static final String uploadDefectImage(String path,String imgKey, MultipartFile file)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException
     {
@@ -104,7 +103,7 @@ public class FileUploadUtils
 
         assertAllowed(file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
 
-        String absPath = getAbsoluteFile(defectImagePath, imgKey+".jpg").getAbsolutePath();
+        String absPath = getAbsoluteFile(path+"\\缺陷图片", imgKey+".jpg").getAbsolutePath();
         file.transferTo(Paths.get(absPath));
         return absPath;
     }

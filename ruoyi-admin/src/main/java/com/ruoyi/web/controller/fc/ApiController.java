@@ -1011,17 +1011,20 @@ public class ApiController extends BaseController {
 
     @ApiOperation("上传缺陷图片")
     @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "file", value = "文件", required = true, dataType = "MultipartFile",  dataTypeClass = MultipartFile.class),
             @ApiImplicitParam(name = "imgKey", value = "图片key", required = true, dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @PostMapping("/upload")
-    public AjaxResult uploadFile(MultipartFile file,String imgKey)
+    public AjaxResult uploadFile(MultipartFile file,String taskPath,String imgKey)
     {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         try
         {
             // 上传并返回新文件名称
-            String fileName = FileUploadUtils.uploadDefectImage(imgKey, file);
+            String fileName = FileUploadUtils.uploadDefectImage(decodeTaskName,imgKey, file);
             if (!fileName.isEmpty()){
                 //更新到缺陷表
                 FcRecord record = new FcRecord(imgKey);
