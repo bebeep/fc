@@ -221,22 +221,21 @@ public class ApiController extends BaseController {
     @ApiOperation("根据站区获取杆号列表-分页")
     @ApiImplicitParams({
         @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = Integer.class),
-        @ApiImplicitParam(name = "startId", value = "站区起始id", required = true, dataType = "Int",  dataTypeClass = Integer.class),
-        @ApiImplicitParam(name = "endId", value = "站区结束id", required = true, dataType = "Int",  dataTypeClass = Integer.class),
+        @ApiImplicitParam(name = "stationNames", value = "站区名称，如果多个站区用逗号拼接", required = true, dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @GetMapping("/getPolesByStation")
     @ResponseBody
-    public AjaxResult getPolesByStation(String taskPath,int startId,int endId)
+    public AjaxResult getPolesByStation(String taskPath,String stationNames)
     {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
         }
-        if(startId == 0 || endId == 0){
-            return new AjaxResult(-1,"未传入站区起止id","");
+        if(stationNames.isEmpty()){
+            return new AjaxResult(-1,"站区名字不能为空","");
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
-        return new AjaxResult(0,"操作成功",TaskUtils.getRoleInfoByStation(decodeTaskName, startId, endId));
+        return new AjaxResult(0,"操作成功",TaskUtils.getRoleInfoByStation(decodeTaskName, stationNames));
     }
 
 

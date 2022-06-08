@@ -140,36 +140,23 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String sql = "SELECT Id,STN,KMV from indexTB;";
+//            String sql = "SELECT Id,STN,KMV from indexTB group by STN having count(*)>1 order by Id;";
+            String sql = "SELECT DISTINCT STN from indexTB";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
-            String lastStationName = "";
-            int endId = 0;
             while ( rs.next() ) {
-                String stationName = rs.getString("STN");
-                endId = rs.getInt("Id");
-                if (stationName.isEmpty() || lastStationName.equals(stationName))continue;
-                lastStationName = stationName;
-
-
                 map = new HashMap<>();
-                map.put("startId",rs.getInt("Id"));
-                map.put("stationName",stationName);
-                map.put("kmv",rs.getDouble("KMV"));//公里标
+//                map.put("startId",rs.getInt("Id"));
+                map.put("stationName",rs.getString("STN"));
+//                map.put("kmv",rs.getDouble("KMV"));//公里标
                 list.add(map);
             }
             ps.close();
             conn.commit();
             conn.close();
-
-            for (int i =0;i<list.size();i++){
-                HashMap map1 = list.get(i);
-                if (i<list.size()-1)map1.put("endId",(int)list.get(i+1).get("startId")-1);
-                else map1.put("endId",endId);
-            }
 
 //            Collections.reverse(list);//倒序输出
             System.out.println("\n站区列表："+ JSON.toJSON(list));
@@ -186,7 +173,7 @@ public class TaskUtils {
      * 根据站区分页获取杆号信息
      * @return
      */
-    public static List<HashMap> getRoleInfoByStation(String taskPath,int startId,int endId){
+    public static List<HashMap> getRoleInfoByStation(String taskPath,String stationNames){
 
         String dbFilePath = getDbPath(taskPath);
 
@@ -197,58 +184,30 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String sql = "SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB;";
-            ps = conn.prepareStatement(sql);
+            String[] stns = stationNames.split(",");
+            StringBuilder sb = new StringBuilder();
+            if (stns.length == 1){
+                sb.append("SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB where STN='"+stationNames.replace(",","")+"'");
+            }else {
+                sb.append("SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB where 1=0");
+                for (String stn:stns)sb.append("or STN = '"+stn+"'");
+            }
+            sb.append(" group by POL having count(*)>1 order by Id;");
+
+            ps = conn.prepareStatement(sb.toString());
             ResultSet rs = ps.executeQuery();
 
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
-            String lastRoleName = ""; //杆号
-            String lastSTN = ""; //站区
-            double lastKMV = 0;
-
-            //每个杆号下面的图片信息 cID(相机编号) SubDBID(图像分库编号) imgKey(图像ID) DxId(吊弦分组编号)
-            List<HashMap<String,Object>> imageInfos = new ArrayList<>();
 
 
             while ( rs.next() ) {
-
-                int id = rs.getInt("Id");
-                if (id <startId) continue;
-
-
-                String roleName = rs.getString("POL");
-                if (lastRoleName.isEmpty() )lastRoleName = roleName;
-
-                if (!lastRoleName.equals(roleName)){
-                    //说明杆号发生改变
-                    map = new HashMap<>();
-                    map.put("KMV",lastKMV);
-                    map.put("POL",lastRoleName);
-                    map.put("STN",lastSTN);
-//                    map.put("imgInfos",imageInfos);
-                    list.add(map);
-                    imageInfos = new ArrayList<>();
-                }
-
-                lastRoleName = roleName;
-                lastKMV = rs.getDouble("KMV");
-                lastSTN = rs.getString("STN");
-                HashMap<String,Object> imageMap = new HashMap<>();
-                imageMap.put("id",id);
-                imageMap.put("cID",rs.getInt("cID"));
-                imageMap.put("imgKey",String.valueOf(rs.getLong("imgKey")));
-                imageMap.put("DxInd",rs.getInt("DxInd"));
-                imageInfos.add(imageMap);
-                if (id  == endId) break;
+                map = new HashMap<>();
+                map.put("KMV",rs.getDouble("KMV"));
+                map.put("POL",rs.getString("POL"));
+                map.put("STN",rs.getString("STN"));
+                list.add(map);
             }
-
-            //最后一项
-            map = new HashMap<>();
-            map.put("KMV",lastKMV);
-            map.put("POL",lastRoleName);
-            map.put("STN",lastSTN);
-            list.add(map);
 
             ps.close();
             conn.commit();
@@ -284,9 +243,7 @@ public class TaskUtils {
      * @return
      */
     public static List<HashMap<String,Object>> getImages(String taskPath,String pole){
-
         String dbFilePath = getDbPath(taskPath);
-
         Connection conn = null;
         PreparedStatement ps = null;
         try {
@@ -482,7 +439,7 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String sql = "SELECT Id,POL,KMV,STN,GYKKMV,imgKey,cId,SubDBID from indexTB;";
+            String sql = "SELECT Id,POL,KMV,STN,GYKKMV,imgKey,cId,SubDBID from indexTB group by POL having count(*)>1 order by Id;";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
