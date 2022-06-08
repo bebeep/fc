@@ -152,10 +152,6 @@ public class ApiController extends BaseController {
     }
 
 
-
-
-
-
     @ApiOperation("根据日期获取任务列表")
     @ApiImplicitParam(name = "date", value = "日期（格式必须为yyyy-MM-dd,比如2022-04-01）", required = true, dataType = "String",  dataTypeClass = String.class)
     @GetMapping("/getTasksByDate")
@@ -167,6 +163,7 @@ public class ApiController extends BaseController {
         }
         return new AjaxResult(0,"操作成功",TaskUtils.getTasksByDate(date));
     }
+
 
     @ApiOperation("根据任务获取站区列表")
     @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class)
@@ -767,6 +764,27 @@ public class ApiController extends BaseController {
         }
         return new AjaxResult(-1,"操作失败","");
     }
+
+
+    @ApiOperation("杆号校准-获取指定杆号下的杆号相机/全局相机的图")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "pole", value = "杆号",  required = true,dataType = "String",  dataTypeClass = String.class),
+    })
+    @GetMapping("/revise/getImagesByPole")
+    @ResponseBody
+    public AjaxResult getImagesByPole(String taskPath,String pole) {
+        if (taskPath.isEmpty()) return new AjaxResult(-1,"任务路径不能为空","");
+        if (pole.isEmpty()) return new AjaxResult(-1,"杆号不能为空","");
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+        try {
+            return new AjaxResult(0,"操作成功",TaskUtils.getImagesByPole(decodeTaskName,pole));
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
 
     @ApiOperation("杆号校准-根据杆号删除信息")
     @ApiImplicitParams({

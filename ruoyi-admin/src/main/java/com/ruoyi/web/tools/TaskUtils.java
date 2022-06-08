@@ -60,26 +60,29 @@ public class TaskUtils {
      * @return
      */
     public static List<HashMap<String,Object>> getTasksByDate(String date){
-        String dicName = basePath + date;
-        File file = new File(dicName);
+        File file = new File(basePath);
         if (!file.exists() || !file.isDirectory() || file.list() == null || file.list().length == 0){
             return null;
         }
         List<HashMap<String,Object>> list = new ArrayList<>();
         HashMap<String,Object> map;
-        for (String dateFile:file.list()){
-            File taskFile = new File(dicName+"\\"+dateFile);
-            if (taskFile==null || !taskFile.exists())continue;
-            map = new HashMap<>();
-//            try {
-//                map.put("taskName", dateFile.substring(21));
-//            }catch (Exception e){
-//                map.put("taskName", dateFile);
-//            }
-            map.put("taskName", dateFile);
-            map.put("taskPath", enCodeStringToBase64(taskFile.getPath()));
-            list.add(map);
+        for (File file1:file.listFiles()){
+            if (!file1.exists() || !file1.isDirectory() || file1.list() == null || file1.list().length == 0){
+                return null;
+            }
+            for (String dateFile:file1.list()){
+                File taskFile = new File(file1.getPath()+"\\"+dateFile);
+                if (taskFile==null || !taskFile.exists()
+                        || !dateFile.replaceAll("_","-").contains(date)
+                        || (!dateFile.contains("上行") && !dateFile.contains("下行"))
+                        )continue;
+                map = new HashMap<>();
+                map.put("taskName", dateFile);
+                map.put("taskPath", enCodeStringToBase64(taskFile.getPath()));
+                list.add(map);
+            }
         }
+
         System.out.println("\n根据日期查询任务文件夹："+ JSON.toJSON(list));
         return list;
     }
@@ -140,8 +143,7 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-//            String sql = "SELECT Id,STN,KMV from indexTB group by STN having count(*)>1 order by Id;";
-            String sql = "SELECT DISTINCT STN from indexTB";
+            String sql = "select Id,STN,KMV from indexTB where Id in(Select min(Id) FROM indexTB group by STN having count(*)>1)";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
@@ -149,9 +151,9 @@ public class TaskUtils {
             HashMap<String,Object> map;
             while ( rs.next() ) {
                 map = new HashMap<>();
-//                map.put("startId",rs.getInt("Id"));
+                map.put("startId",rs.getInt("Id"));
                 map.put("stationName",rs.getString("STN"));
-//                map.put("kmv",rs.getDouble("KMV"));//公里标
+                map.put("kmv",rs.getDouble("KMV"));//公里标
                 list.add(map);
             }
             ps.close();
@@ -178,41 +180,29 @@ public class TaskUtils {
         String dbFilePath = getDbPath(taskPath);
 
         Connection conn = null;
-        PreparedStatement ps = null;
+        Statement ps = null;
         try {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
             String[] stns = stationNames.split(",");
-            StringBuilder sb = new StringBuilder();
-            if (stns.length == 1){
-                sb.append("SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB where STN='"+stationNames.replace(",","")+"'");
-            }else {
-                sb.append("SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB where 1=0");
-                for (String stn:stns)sb.append("or STN = '"+stn+"'");
-            }
-            sb.append(" group by POL having count(*)>1 order by Id;");
-
-            ps = conn.prepareStatement(sb.toString());
-            ResultSet rs = ps.executeQuery();
-
+            ps = conn.createStatement();
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
-
-
-            while ( rs.next() ) {
-                map = new HashMap<>();
-                map.put("KMV",rs.getDouble("KMV"));
-                map.put("POL",rs.getString("POL"));
-                map.put("STN",rs.getString("STN"));
-                list.add(map);
+            for (String stn:stns){
+                ResultSet rs = ps.executeQuery("SELECT Id,POL,STN,KMV,cID,imgKey,DxInd from indexTB where STN='"+stn.replace(",","")+"' group by POL having count(*)>1 order by Id;");
+                while ( rs.next() ) {
+                    map = new HashMap<>();
+                    map.put("KMV",rs.getDouble("KMV"));
+                    map.put("POL",rs.getString("POL"));
+                    map.put("STN",rs.getString("STN"));
+                    list.add(map);
+                }
             }
-
             ps.close();
             conn.commit();
             conn.close();
-
 
             int endIndex = 19;
             List<HashMap> pageList = new ArrayList<>();
@@ -223,7 +213,7 @@ public class TaskUtils {
                 pageMap.put("pageStartPOL",list.get(i).get("POL"));
                 pageMap.put("pageEndSTN",list.get(i+endIndex).get("STN"));
                 pageMap.put("pageEndPOL",list.get(i+endIndex).get("POL"));
-                pageMap.put("pageData",list.subList(i,i+endIndex));
+                pageMap.put("pageData",list.subList(i,i+endIndex+1));
                 pageList.add(pageMap);
             }
 
@@ -445,62 +435,70 @@ public class TaskUtils {
 
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
-            String lastRoleName = ""; //杆号
-            String lastSTN = ""; //站区
-            double lastKMV = 0;
-            double lastGYKKMV = 0;
-            int startId = 0;
-            int endId = 0;
 
             //图片信息
-            List<HashMap<String,Object>> imageInfos = new ArrayList<>();
             while ( rs.next() ) {
-                String roleName = rs.getString("POL");
-                if (lastSTN.isEmpty())lastSTN = rs.getString("STN");
-                if (startId == 0)startId  = rs.getInt("Id");
-                if (lastRoleName.isEmpty() )lastRoleName = roleName;
-                if (!lastRoleName.equals(roleName)){
-                    //说明杆号发生改变
-                    map = new HashMap<>();
-                    map.put("KMV",lastKMV);
-                    map.put("GYKKMV",lastGYKKMV);
-                    map.put("POL",lastRoleName);
-                    map.put("STN",lastSTN);
-                    map.put("startId",startId);
-                    map.put("endId",endId);
-
-                    List<HashMap<String,Object>> poleImages = new ArrayList<>();//杆号相机
-                    List<HashMap<String,Object>> globalImages = new ArrayList<>();//全局相机
-                    setImages(imageInfos, poleImages, globalImages);
-                    map.put("poleImages",poleImages);
-                    map.put("globalImages",globalImages);
-                    list.add(map);
-                    imageInfos = new ArrayList<>();
-                    startId  = rs.getInt("Id");
-                }
-                lastRoleName = roleName;
-                lastSTN = rs.getString("STN");
-                endId = rs.getInt("Id");
-                lastKMV = rs.getDouble("KMV");
-                lastGYKKMV = rs.getDouble("GYKKMV");
-                HashMap<String,Object> imageMap = new HashMap<>();
-                imageMap.put("cID",rs.getInt("cID"));
-                imageMap.put("imgKey",String.valueOf(rs.getLong("imgKey")));
-                imageMap.put("SubDBID",rs.getInt("SubDBID"));
-                imageInfos.add(imageMap);
+                map = new HashMap<>();
+                map.put("KMV",rs.getDouble("KMV"));
+                map.put("GYKKMV",rs.getDouble("GYKKMV"));
+                map.put("POL",rs.getString("POL"));
+                map.put("STN",rs.getString("STN"));
+                list.add(map);
             }
-            //最后一项
-            map = new HashMap<>();
-            map.put("KMV",lastKMV);
-            map.put("POL",lastRoleName);
-            map.put("STN",lastSTN);
-            map.put("GYKKMV",lastGYKKMV);
-            map.put("startId",startId);
-            map.put("endId",endId);
+
+            ps.close();
+            conn.commit();
+            conn.close();
+
+            //重组数据，杆号下分相机分类-相机列表-图片列表
+            System.out.println("\n杆号信息1："+ list.size() + " | "+JSON.toJSON(list.get(0)));
+            System.out.println("\n杆号信息2："+ list.size() + " | "+JSON.toJSON(list.get(list.size()-1)));
+            return list;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return null;
+    }
+
+
+    /**
+     * 根据杆号获取杆号相机和全局相机下的图
+     * @return
+     */
+    public static List<HashMap> getImagesByPole(String taskPath,String pole){
+        String dbFilePath = getDbPath(taskPath);
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            String sql = "SELECT Id,POL,KMV,STN,GYKKMV,imgKey,cId,SubDBID from indexTB where POL='"+pole+"'";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            List<HashMap> list = new ArrayList<>();
+            HashMap<String,Object> map = new HashMap<>();
 
             List<HashMap<String,Object>> poleImages = new ArrayList<>();//杆号相机
             List<HashMap<String,Object>> globalImages = new ArrayList<>();//全局相机
-            setImages(imageInfos, poleImages, globalImages);
+
+            while ( rs.next() ) {
+                int cId = rs.getInt("cID");
+                boolean poleCamera = cId == 3 || cId == 4 || cId == 19 || cId == 20;//杆号相机
+                boolean globalCamera = cId == 11 || cId == 12 || cId == 27 || cId == 28;//全局相机
+                if (poleCamera || globalCamera){
+                    HashMap<String,Object> imageMap = new HashMap<>();
+                    imageMap.put("cID",rs.getInt("cID"));
+                    imageMap.put("imgKey",String.valueOf(rs.getLong("imgKey")));
+                    imageMap.put("SubDBID",rs.getInt("SubDBID"));
+                    imageMap.put("cameraName",getCameraName(cId));
+                    if (poleCamera) poleImages.add(imageMap);
+                    else globalImages.add(imageMap);
+                }
+            }
+
             map.put("poleImages",poleImages);
             map.put("globalImages",globalImages);
 
@@ -520,16 +518,27 @@ public class TaskUtils {
         return null;
     }
 
-    private static void setImages(List<HashMap<String, Object>> imageInfos, List<HashMap<String, Object>> poleImages, List<HashMap<String, Object>> globalImages) {
-        for (HashMap img:imageInfos){
-            if (((int)img.get("cID") == 3) || (int)img.get("cID") == 4
-                    || (int)img.get("cID") == 19 || (int)img.get("cID") == 20){//杆号相机
-                poleImages.add(img);
-            }else if (((int)img.get("cID") == 11) || (int)img.get("cID") == 12
-                    || (int)img.get("cID") == 27 || (int)img.get("cID") == 28){//全局相机
-                globalImages.add(img);
-            }
+
+    private static String getCameraName(int cId){
+        switch (cId){
+            case 3:
+                return "正面支柱号相机";
+            case 4:
+                return "正面吊柱号相机";
+            case 19:
+                return "反面支柱号相机";
+            case 20:
+                return "反面吊柱号相机";
+            case 11:
+                return "正面全局相机左";
+            case 12:
+                return "正面全局相机右";
+            case 27:
+                return "反面全局相机左";
+            case 28:
+                return "反面全局相机右";
         }
+        return "";
     }
 
     /**
@@ -795,7 +804,7 @@ public class TaskUtils {
 //        list.add(map1);
 //        updateMulti("C:\\Users\\Administrator\\Desktop",list,true,0,1000);
 
-        updateJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行","50","50_");
+//        updateJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行","50","50_");
     }
 
 
