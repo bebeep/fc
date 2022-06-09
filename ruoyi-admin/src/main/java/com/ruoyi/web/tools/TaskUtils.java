@@ -34,18 +34,29 @@ public class TaskUtils {
             String month = year + "-"+(i<10?("0"+i):String.valueOf(i));//月份
             map = new HashMap();
             map.put("month",month);
+            List<Map> tasks = new ArrayList<>();
             int count = 0;//当月的任务数
-            for (String dateFile:dateFiles){
-                File taskFiles = new File(basePath+dateFile);
-                if (dateFile.isEmpty() || dateFile.length()!=10 ||
-                        taskFiles == null || !taskFiles.exists() ||
-                        taskFiles.list() == null || taskFiles.list().length == 0 || !dateFile.startsWith(year))
+            for (File file1:file.listFiles()){
+                if (!file1.exists() || !file1.isDirectory() || file1.list() == null || file1.list().length == 0){
                     continue;
-                String curMonth = dateFile.substring(0,7);
-                if (month.equals(curMonth)){
-                    count += taskFiles.list().length;
+                }
+
+                for (String dateFile:file1.list()){
+                    File taskFile = new File(file1.getPath()+"\\"+dateFile);
+                    if (taskFile==null || !taskFile.exists()
+                          || (!dateFile.contains("上行") && !dateFile.contains("下行")))continue;
+                    String curMonth = dateFile.substring(0,7).replaceAll("_","-");
+                    if (month.equals(curMonth)){
+                        Map taskMap = new HashMap();
+                        taskMap.put("taskDate", dateFile.substring(0,10).replaceAll("_","-"));
+                        taskMap.put("taskName", dateFile);
+                        taskMap.put("taskPath", enCodeStringToBase64(taskFile.getPath()));
+                        tasks.add(taskMap);
+                        count += 1;
+                    }
                 }
             }
+            map.put("tasks",tasks);
             map.put("count",count);
             list.add(map);
         }
@@ -68,7 +79,7 @@ public class TaskUtils {
         HashMap<String,Object> map;
         for (File file1:file.listFiles()){
             if (!file1.exists() || !file1.isDirectory() || file1.list() == null || file1.list().length == 0){
-                return null;
+                continue;
             }
             for (String dateFile:file1.list()){
                 File taskFile = new File(file1.getPath()+"\\"+dateFile);
@@ -755,7 +766,7 @@ public class TaskUtils {
      */
     public static void main(String[] args) throws FileNotFoundException {
 //        getTasksByDate("2022-04-01");
-//        getAllTasks();
+        getAllTasks("2022");
 
 //        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
 //        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");

@@ -68,7 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="currendstn != null and currendstn != ''">currEndSTN = #{currendstn},</if>
             <if test="currstartstnid != null  and currstartstnid != ''">currStartSTNId = #{currstartstnid},</if>
             <if test="currendstnid != null and currendstnid != ''">currEndSTNId = #{currendstnid},</if>
-            <if test="currcameratype != null and currcameratype != ''">currCameraType = #{currcameratype},</if>
+            <if test="currcameratype != null">currCameraType = #{currcameratype},</if>
             <if test="currpolespage != null and currpolespage != ''">currPolesPage = #{currpolespage},</if>
             <if test="currpole != null   and currpole != ''" >currPole = #{currpole},</if>
             <if test="currDirect != null   and currDirect != ''" >currDirect = #{currDirect},</if>
