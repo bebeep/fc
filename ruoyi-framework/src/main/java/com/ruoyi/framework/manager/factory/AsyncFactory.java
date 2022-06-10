@@ -99,4 +99,22 @@ public class AsyncFactory
             }
         };
     }
+
+
+    /**
+     * 缓存图片
+     * @param operLog
+     * @return
+     */
+    public static TimerTask startCache(final SysOperLog operLog)
+    {
+        return new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+
+            }
+        };
+    }
 }

@@ -321,7 +321,6 @@ public class ApiController extends BaseController {
         byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
         if (bb == null) {
             bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imageId+(isThumb?"_thumb":""),bb);
         }
         return bb;
     }
@@ -336,7 +335,6 @@ public class ApiController extends BaseController {
         if (bb!=null)System.out.println("缓存中的图片："+bb.length/(1024 * 1024)+"kb");
         if (bb == null){
             bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
-            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+22030622351037301L+(isThumb?"_thumb":""),bb);
         }
         return bb;
     }

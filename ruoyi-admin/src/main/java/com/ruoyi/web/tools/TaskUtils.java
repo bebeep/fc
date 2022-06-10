@@ -2,8 +2,11 @@ package com.ruoyi.web.tools;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.spring.SpringUtils;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -228,7 +231,6 @@ public class TaskUtils {
                 pageList.add(pageMap);
             }
 
-
             //重组数据，杆号下分相机分类-相机列表-图片列表
             System.out.println("\n杆号信息："+ pageList.size());
             return pageList;
@@ -274,6 +276,7 @@ public class TaskUtils {
             conn.commit();
             conn.close();
 
+            //todo 此处开始提前缓存该杆号下的图片
 
             System.out.println(pole+"杆号下的图片："+ list.size() + " | " +JSON.toJSON(list));
             return list;
@@ -318,7 +321,10 @@ public class TaskUtils {
             conn.close();
 
             System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
-            return isThumb?compressImage(imgContent,10):imgContent;
+
+            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
+            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imgKey+(isThumb?"_thumb":""),bb);
+            return bb;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }
