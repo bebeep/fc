@@ -166,17 +166,17 @@ public class ApiController extends BaseController {
         }
         List<HashMap<String,Object>> taskList = TaskUtils.getTasksByDate(date);
 
-        List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
-        String currPole = "";//当前杆号
-        String currTaskPath = "";//当前任务
-        if (list!=null && list.size()>0) {
-            currPole = list.get(0).getCurrpole();
-            currTaskPath = list.get(0).getCurrtask();
-        }
-        if (currTaskPath.isEmpty() && taskList!=null && taskList.size()>0) currTaskPath = taskList.get(0).get("taskPath").toString();
+//        List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
+//        String currPole = "";//当前杆号
+//        String currTaskPath = "";//当前任务
+//        if (list!=null && list.size()>0) {
+//            currPole = list.get(0).getCurrpole();
+//            currTaskPath = list.get(0).getCurrtask();
+//        }
+//        if (currTaskPath.isEmpty() && taskList!=null && taskList.size()>0) currTaskPath = taskList.get(0).get("taskPath").toString();
 
-        //开启后台任务，缓存当前杆号到后面20个杆号的照片
-        if (!currTaskPath.isEmpty())AsyncManager.me().execute(TaskUtils.startCache(currTaskPath,currPole));
+        //开启后台任务，缓存当前杆号以后的1000张图
+//        if (!currTaskPath.isEmpty())AsyncManager.me().execute(TaskUtils.startCache(currTaskPath,currPole));
         return new AjaxResult(0,"操作成功",taskList);
     }
 
