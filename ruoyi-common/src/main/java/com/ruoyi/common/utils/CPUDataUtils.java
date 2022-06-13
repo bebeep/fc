@@ -9,10 +9,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class CPUDataUtils {
-
-
+    final static long GB = 1024 * 1024 * 1024;
     public void testSystemUsage() {
-        final long GB = 1024 * 1024 * 1024;
         while (true) {
             OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
             String osJson = JSON.toJSONString(operatingSystemMXBean);
@@ -46,6 +44,16 @@ public class CPUDataUtils {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    public static boolean isMemoryFull(){
+        OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
+        String osJson = JSON.toJSONString(operatingSystemMXBean);
+        JSONObject jsonObject = JSON.parseObject(osJson);
+        Long freePhysicalMemorySize = jsonObject.getLong("freePhysicalMemorySize");
+        double freeMemory = 1.0 * freePhysicalMemorySize / GB;
+        return freeMemory<1;
     }
 
     public double twoDecimal(double doubleValue) {

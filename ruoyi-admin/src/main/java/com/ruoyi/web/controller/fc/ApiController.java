@@ -13,6 +13,8 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import com.ruoyi.framework.manager.AsyncManager;
+import com.ruoyi.framework.manager.factory.AsyncFactory;
 import com.ruoyi.framework.web.service.SysLoginService;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.domain.FcCamera;
@@ -88,8 +90,13 @@ public class ApiController extends BaseController {
         }
         try
         {
-            String token = loginService.login(username, password);
-            return new AjaxResult(0,"登录成功",token);
+            LoginUser loginUser = loginService.login(username, password);
+
+            try{
+                //初始化浏览历史
+                scanStatusService.insertFcScanStatus(new FcScanStatus(loginUser.getUserId()));
+            }catch (Exception e){}
+            return new AjaxResult(0,"登录成功",loginUser.getToken());
         }
         catch (AuthenticationException e)
         {
@@ -141,10 +148,6 @@ public class ApiController extends BaseController {
     @ResponseBody
     public AjaxResult getAllTasks(String year)
     {
-        try {
-            scanStatusService.insertFcScanStatus(new FcScanStatus(getUserId()));
-        }catch (Exception e){}
-
         if (year.isEmpty()){
            return new AjaxResult(-1,"年份不能为空","");
         }
@@ -161,7 +164,20 @@ public class ApiController extends BaseController {
         if(date.isEmpty() || date.length()!=10){
             return new AjaxResult(-1,"日期格式不对","");
         }
-        return new AjaxResult(0,"操作成功",TaskUtils.getTasksByDate(date));
+        List<HashMap<String,Object>> taskList = TaskUtils.getTasksByDate(date);
+
+        List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
+        String currPole = "";//当前杆号
+        String currTaskPath = "";//当前任务
+        if (list!=null && list.size()>0) {
+            currPole = list.get(0).getCurrpole();
+            currTaskPath = list.get(0).getCurrtask();
+        }
+        if (currTaskPath.isEmpty() && taskList!=null && taskList.size()>0) currTaskPath = taskList.get(0).get("taskPath").toString();
+
+        //开启后台任务，缓存当前杆号到后面20个杆号的照片
+        if (!currTaskPath.isEmpty())AsyncManager.me().execute(TaskUtils.startCache(currTaskPath,currPole));
+        return new AjaxResult(0,"操作成功",taskList);
     }
 
 

@@ -1,6 +1,7 @@
 package com.ruoyi.framework.manager.factory;
 
 import java.util.TimerTask;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.ruoyi.common.constant.Constants;
@@ -101,20 +102,5 @@ public class AsyncFactory
     }
 
 
-    /**
-     * 缓存图片
-     * @param operLog
-     * @return
-     */
-    public static TimerTask startCache(final SysOperLog operLog)
-    {
-        return new TimerTask()
-        {
-            @Override
-            public void run()
-            {
 
-            }
-        };
-    }
 }

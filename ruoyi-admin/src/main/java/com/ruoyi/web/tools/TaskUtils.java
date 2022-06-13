@@ -3,6 +3,7 @@ package com.ruoyi.web.tools;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.utils.CPUDataUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
@@ -323,7 +324,9 @@ public class TaskUtils {
             System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
 
             byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
-            SpringUtils.getBean(RedisCache.class).setCacheObject("imgKey"+imgKey+(isThumb?"_thumb":""),bb);
+
+            //如果可用内存大于1G，则缓存
+            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
             return bb;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
@@ -765,6 +768,44 @@ public class TaskUtils {
         }
     }
 
+
+    /**
+     * 缓存图片
+     * @param currPole 当前杆号
+     * @return
+     */
+    public static TimerTask startCache(final String taskPath,final String currPole)
+    {
+        return new TimerTask()
+        {
+            @Override
+            public void run(){
+                String dbFilePath = getDbPath(decodeBase64String(taskPath));
+                Connection conn = null;
+                PreparedStatement ps = null;
+                try {
+                    Class.forName("org.sqlite.JDBC");
+                    conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+                    conn.setAutoCommit(false);
+
+                    String sql = currPole.isEmpty()?"select * from indexTB limit 1000":"select * from indexTB where Id>=(select min(Id) FROM indexTB where POL='"+currPole+"') limit 1000";
+
+                    ps = conn.prepareStatement(sql);
+                    ResultSet rs = ps.executeQuery();
+                    while ( rs.next() ) {
+                        String tablePath = decodeBase64String(taskPath)+"\\DB\\C"+rs.getInt("cID")+"_"+rs.getInt("SubDBID")+".subDb";
+                        selectImage(tablePath,rs.getLong("imgKey"),false);
+                    }
+                    ps.close();
+                    conn.commit();
+                    conn.close();
+
+                } catch ( Exception e ) {
+                    System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+                }
+            }
+        };
+    }
 
 
     /**

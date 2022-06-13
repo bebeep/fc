@@ -66,7 +66,7 @@ public class SysLoginService
             validateCaptcha(username, code, uuid);
         }
 
-        return login(username, password);
+        return login(username, password).getToken();
 //        // 用户验证
 //        Authentication authentication = null;
 //        try
@@ -100,7 +100,7 @@ public class SysLoginService
     /**
      * @Description 登录验证
      */
-    public String login(String username,String password) {
+    public LoginUser login(String username,String password) {
         // 用户验证
         Authentication authentication = null;
         try
@@ -125,7 +125,8 @@ public class SysLoginService
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
         recordLoginInfo(loginUser.getUserId());
         // 生成token
-        return tokenService.createToken(loginUser);
+        loginUser.setToken(tokenService.createToken(loginUser));
+        return loginUser;
     }
 
 
