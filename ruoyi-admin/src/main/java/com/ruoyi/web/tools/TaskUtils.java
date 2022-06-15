@@ -293,18 +293,20 @@ public class TaskUtils {
      * 转成base64
      * @return
      */
+
     public static byte[] selectImage(String tablePath,Long imgKey,boolean isThumb){
         File imageDb = new File(tablePath);
         if (!imageDb.exists() || imageDb.length() == 0){
             return null;
         }
+
+
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            Class.forName("org.sqlite.JDBC");
+
             conn = DriverManager.getConnection("jdbc:sqlite:"+imageDb);
             conn.setAutoCommit(false);
-
 
             String sql = "SELECT imgGUID,imgContent from imgInfo where imgGUID="+imgKey+";";
             ps = conn.prepareStatement(sql);
@@ -317,17 +319,17 @@ public class TaskUtils {
                 imgContent = new byte[oldBytes.length-8];
                 System.arraycopy(oldBytes, 8, imgContent, 0, imgContent.length);
             }
+            rs.close();
             ps.close();
             conn.commit();
             conn.close();
 
-            System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
 
-            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
-
-            //如果可用内存大于1G，则缓存
-            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
-            return bb;
+//            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
+//
+//            //如果可用内存大于1G，则缓存
+//            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
+            return imgContent;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }
@@ -919,7 +921,6 @@ public class TaskUtils {
 
         ByteArrayInputStream byteInput = new ByteArrayInputStream(imageByte);
         try {
-            System.out.println("压缩前大小："+ imageByte.length);
             Image image = ImageIO.read(byteInput);
             int w = image.getWidth(null);
             int h = image.getHeight(null);
@@ -938,7 +939,6 @@ public class TaskUtils {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ImageIO.write(buffImg, "jpg", out);
             smallImage = out.toByteArray();
-            System.out.println("压缩后大小："+ smallImage.length);
             return smallImage;
 
         } catch (IOException e) {

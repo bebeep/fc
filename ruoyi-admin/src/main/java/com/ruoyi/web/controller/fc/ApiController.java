@@ -331,13 +331,19 @@ public class ApiController extends BaseController {
         if(imageId == 0){
             return null;
         }
+
+        long times = System.currentTimeMillis();
+
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
 
-        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
-        if (bb == null) {
-            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-        }
+//        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
+//        if (bb == null) {
+//            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+//        }
+
+        byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+        if (bb!=null)System.out.println("访问时间："+imageId+"|"+bb.length/1024+"|"+(System.currentTimeMillis()-times));
         return bb;
     }
 
