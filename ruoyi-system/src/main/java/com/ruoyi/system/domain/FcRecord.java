@@ -67,6 +67,8 @@ public class FcRecord extends BaseEntity
     @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
     private Integer endx;
 
+
+
     /** $column.columnComment */
     @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
     private Integer endy;
@@ -77,6 +79,16 @@ public class FcRecord extends BaseEntity
     private String imgPath;//缺陷图片地址
     private Double KMV;//公里标
     private Long TIM;
+    private Integer newX;
+
+
+    public Integer getNewX() {
+        return newX;
+    }
+
+    public void setNewX(Integer newX) {
+        this.newX = newX;
+    }
 
     public String getCheckDate() {
         return checkDate;
@@ -269,7 +281,8 @@ public class FcRecord extends BaseEntity
                     String defectLevel,
                     String STN,
                     double KMV,
-                    Long TIM
+                    Long TIM,
+                    Integer newX
 
     ) {
         this.imgkey = imgkey;
@@ -289,6 +302,7 @@ public class FcRecord extends BaseEntity
         this.STN = STN;
         this.KMV = KMV;
         this.TIM = TIM;
+        this.newX = newX;
     }
 
     @Override

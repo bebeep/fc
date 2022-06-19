@@ -248,7 +248,25 @@ public class ApiController extends BaseController {
             return new AjaxResult(-1,"站区名字不能为空","");
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
-        return new AjaxResult(0,"操作成功",TaskUtils.getRoleInfoByStation(decodeTaskName, stationNames));
+
+        List<HashMap> poles = TaskUtils.getRoleInfoByStation(decodeTaskName, stationNames);
+
+        if (poles!=null && poles.size() > 0){
+            for (HashMap map : poles){
+                List<HashMap> pageList = (List<HashMap>) map.get("pageData");
+                for (HashMap poleData : pageList){
+                    String pole = poleData.get("POL").toString();
+                    if (pole.isEmpty()) continue;
+                    FcRecord fcRecord = new FcRecord();
+                    fcRecord.setPole(pole);
+                    List<FcRecord> records = fcRecordService.selectFcRecordList(fcRecord);
+                    poleData.put("hasDefect", records!=null && records.size()>0);
+                }
+                map.put("pageData",pageList);
+            }
+        }
+
+        return new AjaxResult(0,"操作成功",poles);
     }
 
 
@@ -286,6 +304,7 @@ public class ApiController extends BaseController {
         List<HashMap<String,Object>> resultList = new ArrayList<>();
         for (HashMap cameraType:cameraList){
             List<HashMap> cameras = (List<HashMap>) cameraType.get("cameraList");
+            boolean hasDefect = false;
             for (HashMap camera:cameras){
                 long cameraId = (long) camera.get("id");
                 List<HashMap> images = new ArrayList<>();
@@ -293,12 +312,14 @@ public class ApiController extends BaseController {
                     int cID = (int) data.get("cID");
                     if (cID == cameraId){
                         List<FcRecord> records = fcRecordService.selectFcRecordList(new FcRecord(data.get("imgKey").toString()));
+                        if (!hasDefect)hasDefect = records  != null && records.size()>0;
                         data.put("records",records);
                         images.add(data);
                     }
                 }
                 camera.put("images",images);
             }
+            cameraType.put("hasDefect",hasDefect);
             resultList.add(cameraType);
         }
 
@@ -337,13 +358,13 @@ public class ApiController extends BaseController {
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
 
-//        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
-//        if (bb == null) {
-//            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-//        }
+        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
+        if (bb == null) {
+            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+        }
 
-        byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-        if (bb!=null)System.out.println("访问时间："+imageId+"|"+bb.length/1024+"|"+(System.currentTimeMillis()-times));
+//        byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+//        if (bb!=null)System.out.println("访问时间："+imageId+"|"+bb.length/1024+"|"+(System.currentTimeMillis()-times));
         return bb;
     }
 
@@ -380,6 +401,7 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
+            @ApiImplicitParam(name = "newX", value = "",  dataType = "Integer",  dataTypeClass = Integer.class),
     })
     @ApiResponse
     @PostMapping("/addDefectInfo")
@@ -404,7 +426,8 @@ public class ApiController extends BaseController {
                     jsonParam.getString("defectLevel"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
-                    jsonParam.getLong("TIM")
+                    jsonParam.getLong("TIM"),
+                    jsonParam.getIntValue("newX")
             ));
             return new AjaxResult(0,"提交成功","");
         }catch (Exception e){
@@ -414,13 +437,30 @@ public class ApiController extends BaseController {
 
 
 
-    @ApiOperation("获取单张图片的缺陷信息")
+    @ApiOperation("根据图片获取缺陷信息")
     @ApiImplicitParam(name = "imgKey", value = "图片id", required = true, dataType = "String",  dataTypeClass = String.class)
     @GetMapping("/getSingleDefectInfo")
     @ResponseBody
-    public AjaxResult getSingleDefectInfo(String imgKey) {
+    public AjaxResult getSingleDefectInfo(@RequestParam(value = "imgKey",required = false, defaultValue = "")String imgKey) {
+        if (imgKey.isEmpty()) new AjaxResult(-1,"imgKey不能为空");
         try{
             return new AjaxResult(0,"操作成功",JSONObject.toJSON(fcRecordService.selectFcRecordList(new FcRecord(imgKey))));
+        }catch (Exception e){
+        }
+        return new AjaxResult(-1,"操作失败","");
+    }
+
+
+    @ApiOperation("根据杆号获取缺陷信息")
+    @ApiImplicitParam(name = "pole", value = "杆号", required = true, dataType = "String",  dataTypeClass = String.class)
+    @GetMapping("/getSingleDefectInfoByPole")
+    @ResponseBody
+    public AjaxResult getSingleDefectInfoByPole(@RequestParam(value = "pole",required = false, defaultValue = "")String pole) {
+        if (pole.isEmpty()) new AjaxResult(-1,"杆号不能为空");
+        try{
+            FcRecord fcRecord = new FcRecord();
+            fcRecord.setPole(pole);
+            return new AjaxResult(0,"操作成功",JSONObject.toJSON(fcRecordService.selectFcRecordList(fcRecord)));
         }catch (Exception e){
         }
         return new AjaxResult(-1,"操作失败","");
@@ -445,6 +485,7 @@ public class ApiController extends BaseController {
             @ApiImplicitParam(name = "STN", value = "站区名称",  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "KMV", value = "公里标",  dataType = "Double",  dataTypeClass = Double.class),
             @ApiImplicitParam(name = "TIM", value = "时间戳（TIM字段）",  dataType = "Long",  dataTypeClass = Long.class),
+            @ApiImplicitParam(name = "newX", value = "",  dataType = "Integer",  dataTypeClass = Integer.class),
     })
     @ApiResponse
     @PostMapping("/updateDefectInfo")
@@ -469,7 +510,8 @@ public class ApiController extends BaseController {
                     jsonParam.getString("defectLevel"),
                     jsonParam.getString("STN"),
                     jsonParam.getDoubleValue("KMV"),
-                    jsonParam.getLong("TIM")
+                    jsonParam.getLong("TIM"),
+                    jsonParam.getIntValue("newX")
 
             );
 
@@ -917,10 +959,10 @@ public class ApiController extends BaseController {
                         else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index+1])).start();
                     }
                 }else { //逆序
-                    for (int i = 0;i < poles.length ; i--){
+                    for (int i = 0;i < poles.length ; i++){
                         if (poles[i].isEmpty()) continue;
                         final int index = i;
-                        if (i == poles.length - 1) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(isTargetPoleNull?poles[index]:targetPole))).start();
+                        if (i == 0) new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],TaskUtils.getNewPoleName(isTargetPoleNull?poles[index]:targetPole))).start();
                         else  new Thread(()-> TaskUtils.updateJHdata(taskPath,poles[index],poles[index-1])).start();
                     }
                 }
@@ -1135,10 +1177,17 @@ public class ApiController extends BaseController {
             List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
             if (list!=null && list.size()>0){
                 FcScanStatus status = list.get(0);
+
+                String taskName = TaskUtils.getTaskName(status.getCurrtask());
+                if (status.getCurrtask().isEmpty() || taskName.isEmpty()){
+                    return new AjaxResult(-1,"操作失败");
+                }
+
                 HashMap map = new HashMap();
                 map.put("scanedPoles",status.getScanedpoles());
                 map.put("currDate",status.getCurrdate());
                 map.put("currTask",status.getCurrtask());
+                map.put("currTaskName",taskName);
                 map.put("currStartSTN",status.getCurrstartstn());
                 map.put("currEndSTN",status.getCurrendstn());
                 map.put("currStartSTNId",status.getCurrstartstnid());

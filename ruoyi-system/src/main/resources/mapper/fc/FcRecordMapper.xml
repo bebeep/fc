@@ -14,6 +14,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="startx"    column="startX"    />
         <result property="starty"    column="startY"    />
         <result property="endx"    column="endX"    />
+        <result property="newX"    column="newX"    />
         <result property="endy"    column="endY"    />
         <result property="componentName"    column="componentName"    />
         <result property="componentDefect"    column="componentDefect"    />
@@ -50,6 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startx != null "> and startX = #{startx}</if>
             <if test="starty != null "> and startY = #{starty}</if>
             <if test="endx != null "> and endX = #{endx}</if>
+            <if test="newX != null "> and endX = #{newX}</if>
             <if test="endy != null "> and endY = #{endy}</if>
             <if test="componentName != null "> and componentName = #{componentName}</if>
             <if test="componentDefect != null "> and componentDefect = #{componentDefect}</if>
@@ -79,6 +81,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startx != null">startX,</if>
             <if test="starty != null">startY,</if>
             <if test="endx != null">endX,</if>
+            <if test="newX != null">newX,</if>
             <if test="endy != null">endY,</if>
             <if test="componentName != null">componentName,</if>
             <if test="componentDefect != null">componentDefect,</if>
@@ -99,6 +102,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startx != null">#{startx},</if>
             <if test="starty != null">#{starty},</if>
             <if test="endx != null">#{endx},</if>
+            <if test="newX != null">#{newX},</if>
             <if test="endy != null">#{endy},</if>
             <if test="componentName != null">#{componentName},</if>
             <if test="componentDefect != null">#{componentDefect},</if>
@@ -123,6 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="startx != null">startX = #{startx},</if>
             <if test="starty != null">startY = #{starty},</if>
             <if test="endx != null">endX = #{endx},</if>
+            <if test="newX != null">endX = #{newX},</if>
             <if test="endy != null">endY = #{endy},</if>
             <if test="componentName != null ">componentName = #{componentName},</if>
             <if test="componentDefect != null">componentDefect = #{componentDefect},</if>
