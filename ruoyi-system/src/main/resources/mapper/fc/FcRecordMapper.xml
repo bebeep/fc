@@ -73,71 +73,71 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <insert id="insertFcRecord" parameterType="FcRecord" useGeneratedKeys="true" keyProperty="id">
         insert into fc_record
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="imgkey != null">imgKey,</if>
-            <if test="content != null">content,</if>
-            <if test="taskpath != null">taskPath,</if>
-            <if test="pole != null">pole,</if>
-            <if test="cameraid != null">cameraId,</if>
-            <if test="startx != null">startX,</if>
-            <if test="starty != null">startY,</if>
-            <if test="endx != null">endX,</if>
-            <if test="newX != null">newX,</if>
-            <if test="endy != null">endY,</if>
-            <if test="componentName != null">componentName,</if>
-            <if test="componentDefect != null">componentDefect,</if>
-            <if test="defectType != null">defectType,</if>
-            <if test="defectLevel != null">defectLevel,</if>
-            <if test="checkDate != null">checkDate,</if>
-            <if test="STN != null">STN,</if>
-            <if test="KMV != null">KMV,</if>
-            <if test="TIM != null">TIM,</if>
-            <if test="imgPath != null">imgPath</if>
+            <if test="imgkey != null and imgkey !='' ">imgKey,</if>
+            <if test="content != null and content !='' ">content,</if>
+            <if test="taskpath != null and taskpath !='' ">taskPath,</if>
+            <if test="pole != null and pole !='' ">pole,</if>
+            <if test="cameraid != null and cameraid !='' ">cameraId,</if>
+            <if test="startx != null and startx !='' ">startX,</if>
+            <if test="starty != null and starty !='' ">startY,</if>
+            <if test="endx != null and endx !='' ">endX,</if>
+            <if test="newX != null and newX !='' ">newX,</if>
+            <if test="endy != null and endy !='' ">endY,</if>
+            <if test="componentName != null and componentName !='' ">componentName,</if>
+            <if test="componentDefect != null and componentDefect !='' ">componentDefect,</if>
+            <if test="defectType != null and defectType !='' ">defectType,</if>
+            <if test="defectLevel != null and defectLevel !='' ">defectLevel,</if>
+            <if test="checkDate != null and checkDate !='' ">checkDate,</if>
+            <if test="STN != null and STN !='' ">STN,</if>
+            <if test="KMV != null and KMV !='' ">KMV,</if>
+            <if test="TIM != null and TIM !='' ">TIM,</if>
+            <if test="imgPath != null and imgPath !='' ">imgPath</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="imgkey != null">#{imgkey},</if>
-            <if test="content != null">#{content},</if>
-            <if test="taskpath != null">#{taskpath},</if>
-            <if test="pole != null">#{pole},</if>
-            <if test="cameraid != null">#{cameraid},</if>
-            <if test="startx != null">#{startx},</if>
-            <if test="starty != null">#{starty},</if>
-            <if test="endx != null">#{endx},</if>
-            <if test="newX != null">#{newX},</if>
-            <if test="endy != null">#{endy},</if>
-            <if test="componentName != null">#{componentName},</if>
-            <if test="componentDefect != null">#{componentDefect},</if>
-            <if test="defectType != null">#{defectType},</if>
-            <if test="defectLevel != null">#{defectLevel},</if>
-            <if test="checkDate != null">#{checkDate},</if>
-            <if test="STN != null">#{STN},</if>
-            <if test="KMV != null">#{KMV},</if>
-            <if test="TIM != null">#{TIM},</if>
-            <if test="imgPath != null">#{imgPath}</if>
+            <if test="imgkey != null and imgkey !='' ">#{imgkey},</if>
+            <if test="content != null and content !=''">#{content},</if>
+            <if test="taskpath != null and taskpath !='' ">#{taskpath},</if>
+            <if test="pole != null and pole !=''">#{pole},</if>
+            <if test="cameraid != null and cameraid !=''">#{cameraid},</if>
+            <if test="startx != null and startx !=''">#{startx},</if>
+            <if test="starty != null and starty !=''">#{starty},</if>
+            <if test="endx != null and endx !=''">#{endx},</if>
+            <if test="newX != null and newX !=''">#{newX},</if>
+            <if test="endy != null and endy !=''">#{endy},</if>
+            <if test="componentName != null and componentName !=''">#{componentName},</if>
+            <if test="componentDefect != null and componentDefect !=''">#{componentDefect},</if>
+            <if test="defectType != null and defectType !=''">#{defectType},</if>
+            <if test="defectLevel != null and defectLevel !=''">#{defectLevel},</if>
+            <if test="checkDate != null and checkDate !=''">#{checkDate},</if>
+            <if test="STN != null and STN !=''">#{STN},</if>
+            <if test="KMV != null and KMV !=''">#{KMV},</if>
+            <if test="TIM != null and TIM !=''">#{TIM},</if>
+            <if test="imgPath != null and imgPath !=''">#{imgPath}</if>
          </trim>
     </insert>
 
     <update id="updateFcRecord" parameterType="FcRecord">
         update fc_record
         <trim prefix="SET" suffixOverrides=",">
-            <if test="imgkey != null">imgKey = #{imgkey},</if>
-            <if test="content != null">content = #{content},</if>
-            <if test="taskpath != null">taskPath = #{taskpath},</if>
-            <if test="pole != null">pole = #{pole},</if>
-            <if test="cameraid != null">cameraId = #{cameraid},</if>
-            <if test="startx != null">startX = #{startx},</if>
-            <if test="starty != null">startY = #{starty},</if>
-            <if test="endx != null">endX = #{endx},</if>
-            <if test="newX != null">endX = #{newX},</if>
-            <if test="endy != null">endY = #{endy},</if>
-            <if test="componentName != null ">componentName = #{componentName},</if>
-            <if test="componentDefect != null">componentDefect = #{componentDefect},</if>
-            <if test="defectType != null">defectType = #{defectType},</if>
-            <if test="defectLevel != null">defectLevel = #{defectLevel},</if>
-            <if test="checkDate != null">checkDate = #{checkDate},</if>
-            <if test="STN != null">STN = #{STN},</if>
-            <if test="KMV != null">KMV = #{KMV},</if>
-            <if test="TIM != null">TIM = #{TIM},</if>
-            <if test="imgPath != null">imgPath = #{imgPath}</if>
+            <if test="imgkey != null and imgkey !='' ">imgKey = #{imgkey},</if>
+            <if test="content != null and content !='' ">content = #{content},</if>
+            <if test="taskpath != null and taskpath !='' ">taskPath = #{taskpath},</if>
+            <if test="pole != null and pole !='' ">pole = #{pole},</if>
+            <if test="cameraid != null and cameraid !='' ">cameraId = #{cameraid},</if>
+            <if test="startx != null and startx !='' ">startX = #{startx},</if>
+            <if test="starty != null and starty !='' ">startY = #{starty},</if>
+            <if test="endx != null and endx !='' ">endX = #{endx},</if>
+            <if test="newX != null and newX !='' ">endX = #{newX},</if>
+            <if test="endy != null and endy !='' ">endY = #{endy},</if>
+            <if test="componentName != null  and componentName !='' ">componentName = #{componentName},</if>
+            <if test="componentDefect != null and componentDefect !='' ">componentDefect = #{componentDefect},</if>
+            <if test="defectType != null and defectType !='' ">defectType = #{defectType},</if>
+            <if test="defectLevel != null and defectLevel !='' ">defectLevel = #{defectLevel},</if>
+            <if test="checkDate != null and checkDate !='' ">checkDate = #{checkDate},</if>
+            <if test="STN != null and STN !='' ">STN = #{STN},</if>
+            <if test="KMV != null and KMV !='' ">KMV = #{KMV},</if>
+            <if test="TIM != null and TIM !='' ">TIM = #{TIM},</if>
+            <if test="imgPath != null and imgPath !='' ">imgPath = #{imgPath}</if>
         </trim>
         where id = #{id}
     </update>
