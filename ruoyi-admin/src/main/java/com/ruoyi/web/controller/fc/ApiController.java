@@ -176,7 +176,7 @@ public class ApiController extends BaseController {
         if (currTaskPath.isEmpty() && taskList!=null && taskList.size()>0) currTaskPath = taskList.get(0).get("taskPath").toString();
 
         //开启后台任务，缓存当前杆号到后面20个杆号的照片
-        if (!currTaskPath.isEmpty())AsyncManager.me().execute(TaskUtils.startCache(currTaskPath,currPole));
+//        if (!currTaskPath.isEmpty())AsyncManager.me().execute(TaskUtils.startCache(currTaskPath,currPole));
         return new AjaxResult(0,"操作成功",taskList);
     }
 
@@ -334,11 +334,11 @@ public class ApiController extends BaseController {
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
 
-        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
-        if (bb == null) {
-            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-        }
-        return bb;
+//        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
+//        if (bb == null) {
+//            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+//        }
+        return TaskUtils.selectImage(tablePath,imageId,isThumb);
     }
 
 

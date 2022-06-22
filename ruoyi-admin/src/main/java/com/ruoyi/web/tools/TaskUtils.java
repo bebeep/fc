@@ -323,11 +323,11 @@ public class TaskUtils {
 
             System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
 
-            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
+//            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
 
             //如果可用内存大于1G，则缓存
-            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
-            return bb;
+//            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
+            return imgContent;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
         }
