@@ -23,6 +23,19 @@ public class TaskUtils {
 
 
     /**
+     * 根据任务全路径获取任务名称
+     */
+    public static String getTaskName(String taskPath){
+        try {
+            String taskName = decodeBase64String(taskPath);
+            return new File(taskName.trim()).getName();
+        }catch (Exception e){
+        }
+        return "";
+    }
+
+
+    /**
      * 获取数据源目录下的所有任务数据
      * @return
      */
@@ -293,18 +306,20 @@ public class TaskUtils {
      * 转成base64
      * @return
      */
+
     public static byte[] selectImage(String tablePath,Long imgKey,boolean isThumb){
         File imageDb = new File(tablePath);
         if (!imageDb.exists() || imageDb.length() == 0){
             return null;
         }
+
+
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            Class.forName("org.sqlite.JDBC");
+
             conn = DriverManager.getConnection("jdbc:sqlite:"+imageDb);
             conn.setAutoCommit(false);
-
 
             String sql = "SELECT imgGUID,imgContent from imgInfo where imgGUID="+imgKey+";";
             ps = conn.prepareStatement(sql);
@@ -317,11 +332,11 @@ public class TaskUtils {
                 imgContent = new byte[oldBytes.length-8];
                 System.arraycopy(oldBytes, 8, imgContent, 0, imgContent.length);
             }
+            rs.close();
             ps.close();
             conn.commit();
             conn.close();
 
-            System.out.println("通过数据库查找到的图片信息："+imgContent.length/1024+"kb");
 
 //            byte[] bb = isThumb?compressImage(imgContent,10):imgContent;
 
@@ -677,13 +692,13 @@ public class TaskUtils {
                     resultCount+= stat.executeUpdate(sql);
                 }
             }else { //逆序
-                for (int i = 0;i < poles.length ; i--){
+                for (int i = 0;i < poles.length ; i++){
                     if (poles[i].isEmpty()) continue;
                     if (i == 0) {
                         newStartPole = getNewPoleName(isTargetPoleNull?poles[i]:targetPole);
                         sql = "update indexTB set POL='"+newStartPole+"'  where POL='"+poles[i]+"'";
                     }else sql = "update indexTB set POL='"+poles[i-1]+"'  where POL='"+poles[i]+"'";
-                    newEndPole = poles[i-1];
+                    newEndPole = poles[Math.max(i-1,0)];
                     resultCount+= stat.executeUpdate(sql);
                 }
             }
@@ -813,7 +828,7 @@ public class TaskUtils {
      */
     public static void main(String[] args) throws FileNotFoundException {
 //        getTasksByDate("2022-04-01");
-        getAllTasks("2022");
+//        getAllTasks("2022");
 
 //        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
 //        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
@@ -863,6 +878,9 @@ public class TaskUtils {
 //        updateMulti("C:\\Users\\Administrator\\Desktop",list,true,0,1000);
 
 //        updateJHdata("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_01_双雷线_双墩集站-雷麻店站_下行","50","50_");
+
+
+//        getTaskName("RDpc5aSp56qX5pWw5o2uXDIwMjItMDQtMDFcMjAyMl8wNF8wMV8xNF8wNF8wMV/lj4zpm7fnur9f5Y+M5aKp6ZuG56uZLembt+m6u+W6l+ermV/kuIvooYwx");
     }
 
 
@@ -919,7 +937,6 @@ public class TaskUtils {
 
         ByteArrayInputStream byteInput = new ByteArrayInputStream(imageByte);
         try {
-            System.out.println("压缩前大小："+ imageByte.length);
             Image image = ImageIO.read(byteInput);
             int w = image.getWidth(null);
             int h = image.getHeight(null);
@@ -938,7 +955,6 @@ public class TaskUtils {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             ImageIO.write(buffImg, "jpg", out);
             smallImage = out.toByteArray();
-            System.out.println("压缩后大小："+ smallImage.length);
             return smallImage;
 
         } catch (IOException e) {
