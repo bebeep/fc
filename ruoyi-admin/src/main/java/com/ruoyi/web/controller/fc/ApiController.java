@@ -362,7 +362,13 @@ public class ApiController extends BaseController {
 //        if (bb == null) {
 //            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
 //        }
-        return TaskUtils.selectImage(tablePath,imageId,isThumb);
+
+
+        byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+        if (isThumb){
+            bb = TaskUtils.compressImage(bb,10);
+        }
+        return bb;
     }
 
 
