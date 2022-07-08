@@ -25,6 +25,7 @@ import com.ruoyi.system.service.*;
 import com.ruoyi.web.controller.tool.ExportRecord;
 import com.ruoyi.web.controller.tool.ExportRecordImage;
 import com.ruoyi.web.tools.TaskUtils;
+import com.ruoyi.web.websockt.WebSocketServer;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -36,6 +37,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,7 +76,7 @@ public class ApiController extends BaseController {
     private IFcScanStatusService scanStatusService;
 
     @Autowired
-    private TokenService tokenService;
+    private WebSocketServer webSocketServer;
 
     @ApiOperation("登录")
     @ApiImplicitParams({
@@ -1209,4 +1212,43 @@ public class ApiController extends BaseController {
     }
 
 
+    @ApiOperation("导入数据")
+    @ApiResponse
+    @GetMapping("/importData")
+    public AjaxResult importData()
+    {
+        return new AjaxResult(-1,"操作失败");
+    }
+
+    @ApiOperation("导出图像数据")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "targetPath", value = "目标文件夹",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "stationNames", value = "站区名称，如果多个站区用逗号拼接", required = true, dataType = "String",  dataTypeClass = String.class),
+    })
+    @ApiResponse
+    @PostMapping("/outputImages")
+    public AjaxResult outputImages(String taskPath,String targetPath, @RequestParam(value = "",required = false)String stationNames)
+    {
+        if(taskPath.isEmpty()){
+            return new AjaxResult(-1,"任务路径不能为空","");
+        }
+        if(!new File(targetPath).exists()){
+            return new AjaxResult(-1,"目标文件夹不存在","");
+        }
+        String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+
+        List<HashMap> poles = TaskUtils.getRoleInfoByStation(decodeTaskName, stationNames);
+        return new AjaxResult(-1,"操作失败");
+    }
+
+
+    @ApiResponse
+    @PostMapping("/testWebsocketMsg")
+    public AjaxResult testWebsocketMsg(String sId,String content)
+    {
+
+        TaskUtils.saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山");
+        return new AjaxResult(0,"操作成功");
+    }
 }

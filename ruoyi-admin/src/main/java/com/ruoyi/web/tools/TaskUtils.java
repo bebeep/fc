@@ -7,6 +7,7 @@ import com.ruoyi.common.utils.CPUDataUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import com.ruoyi.web.websockt.WebSocketServer;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -15,11 +16,14 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class TaskUtils {
 
 
     static final String basePath = "D:\\天窗数据\\"; //存放数据源文件的根目录
+    static final String imagePath = "D:\\图像数据\\"; //存放数图片的根目录
 
 
     /**
@@ -824,9 +828,122 @@ public class TaskUtils {
 
 
     /**
+     * 按照站区打包文件
+     * @return
+     */
+    public static void saveImagesToLocal(String userId,String taskPath,String stationNames){
+        String dbFilePath = getDbPath(taskPath);
+        Connection conn = null;
+        Statement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
+            conn.setAutoCommit(false);
+
+            String[] stns = stationNames.split(",");
+            ps = conn.createStatement();
+            List<HashMap<String,Object>> list = new ArrayList<>();
+            HashMap<String,Object> map;
+            for (String stn:stns){
+                ResultSet rs = ps.executeQuery("SELECT Id,STN,cID,imgKey,SubDBID,KMV,POL,TIM from indexTB where STN='"+stn.replace(",","")+"'");
+                while ( rs.next() ) {
+                    map = new HashMap<>();
+                    map.put("cID",rs.getInt("cID"));
+                    map.put("imgKey",rs.getLong("imgKey"));
+                    map.put("SubDBID",rs.getInt("SubDBID"));
+                    map.put("STN",rs.getString("STN"));
+                    map.put("KMV",(int)rs.getDouble("KMV"));
+                    map.put("POL",rs.getString("POL"));
+                    map.put("TIM",rs.getLong("TIM"));
+                    list.add(map);
+                }
+            }
+            ps.close();
+            conn.commit();
+            conn.close();
+            int currIndex = 0,successCount = 0;
+            HashMap callBackMap = new HashMap();
+            String currStn = "";
+            File zipFile = null;
+            InputStream input = null;
+            ZipOutputStream zipOut = null;
+            for (HashMap image:list){
+                String tablePath = taskPath+"\\DB\\C"+image.get("cID")+"_"+image.get("SubDBID")+".subDb";
+                String[] taskNames = taskPath.split("\\\\");
+                String taskName = taskNames[taskNames.length-1];
+                String date = taskName.substring(0,10);
+                image.put("targetPath",imagePath+date+"\\"+taskName+"\\"+image.get("STN")+"\\K"+image.get("KMV")+"_"+image.get("POL"));
+                image.put("fileName",image.get("TIM")+"_K"+image.get("KMV")+"_"+image.get("POL")+"_"+image.get("cID")+".jpg");
+                File file = saveImages(tablePath,image);
+                currIndex++;
+
+                //生成压缩包
+                if (!currStn.equals(image.get("STN"))){
+                    zipFile = new File(imagePath+date+"\\"+taskName+"\\"+image.get("STN")+".zip");
+                    zipOut = new ZipOutputStream(new FileOutputStream(zipFile));
+                }
+                if (file!=null && file.exists()) {
+                    successCount ++;
+
+                    input = new FileInputStream(file);
+                    zipOut.putNextEntry(new ZipEntry(file.getName()));
+                    zipOut.setComment("www.fc.com");
+                    int temp = 0;
+                    while ((temp = input.read())!=-1){
+                        zipOut.write(temp);
+                    }
+                    input.close();
+                }
+                callBackMap.put("totalSize",list.size());
+                callBackMap.put("currIndex",currIndex);
+                callBackMap.put("progress",String.format("%.2f", ((currIndex * 1.0) / (list.size() * 1.0)) * 100));
+                callBackMap.put("successSize",successCount);
+                String content = "=================当前进度："+currIndex+"/"+list.size() + "("+String.format("%.2f", ((currIndex * 1.0) / (list.size() * 1.0)) * 100)+")   success:" +successCount;
+                WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
+            }
+            if (zipOut!=null)zipOut.close();
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        }
+    }
+    public static File saveImages(String tablePath,HashMap map){
+        File imageDb = new File(tablePath);
+        if (!imageDb.exists() || imageDb.length() == 0){
+            return null;
+        }
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+imageDb);
+            conn.setAutoCommit(false);
+            String sql = "SELECT imgContent from imgInfo where imgGUID="+map.get("imgKey")+";";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            byte[] imgContent = null;
+            while ( rs.next() ) {
+                byte[] oldBytes = rs.getBytes("imgContent");
+                imgContent = new byte[oldBytes.length-8];
+                System.arraycopy(oldBytes, 8, imgContent, 0, imgContent.length);
+            }
+            rs.close();
+            ps.close();
+            conn.commit();
+            conn.close();
+            return saveFileByBytes(imgContent,map.get("targetPath").toString(),map.get("fileName").toString());
+        } catch ( Exception e ) {
+           e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    /**
      * 测试
      */
     public static void main(String[] args) throws FileNotFoundException {
+        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山");
 //        getTasksByDate("2022-04-01");
 //        getAllTasks("2022");
 
@@ -962,6 +1079,40 @@ public class TaskUtils {
         return imageByte;
     }
 
+    public static File saveFileByBytes(byte[] bytes,String filePath, String fileName) {
+        BufferedOutputStream bos = null;
+        FileOutputStream fos = null;
+        File file = null;
+        try {
+            File dir = new File(filePath);
+            if (!dir.exists() || !dir.isDirectory()) {// 判断文件目录是否存在
+                dir.mkdirs();
+            }
+            file = new File(filePath + "\\" + fileName);
+            fos = new FileOutputStream(file);
+            bos = new BufferedOutputStream(fos);
+            bos.write(bytes);
+            return file;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (bos != null) {
+                try {
+                    bos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     /**
      * 将目标字符转成base64编码
@@ -993,5 +1144,7 @@ public class TaskUtils {
             return target;
         }
     }
+
+
 
 }
