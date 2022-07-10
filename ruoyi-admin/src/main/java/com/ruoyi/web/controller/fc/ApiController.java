@@ -11,6 +11,7 @@ import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
+import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
@@ -32,10 +33,12 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
@@ -99,7 +102,12 @@ public class ApiController extends BaseController {
                 //初始化浏览历史
                 scanStatusService.insertFcScanStatus(new FcScanStatus(loginUser.getUserId()));
             }catch (Exception e){}
-            return new AjaxResult(0,"登录成功",loginUser.getToken());
+            HashMap map = new HashMap();
+            map.put("token",loginUser.getToken());
+            map.put("userId",loginUser.getUserId());
+            map.put("username",loginUser.getUser().getUserName());
+            map.put("nickname",loginUser.getUser().getNickName());
+            return new AjaxResult(0,"登录成功",map);
         }
         catch (AuthenticationException e)
         {
@@ -369,7 +377,7 @@ public class ApiController extends BaseController {
 
         byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
         if (isThumb){
-            bb = TaskUtils.compressImage(bb,10);
+            bb = TaskUtils.compressImage(bb);
         }
         return bb;
     }
@@ -1220,28 +1228,52 @@ public class ApiController extends BaseController {
         return new AjaxResult(-1,"操作失败");
     }
 
-    @ApiOperation("导出图像数据")
+    @ApiOperation("打包图像数据")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
-            @ApiImplicitParam(name = "targetPath", value = "目标文件夹",required = true,  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "stationNames", value = "站区名称，如果多个站区用逗号拼接", required = true, dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
-    @PostMapping("/outputImages")
-    public AjaxResult outputImages(String taskPath,String targetPath, @RequestParam(value = "",required = false)String stationNames)
+    @PostMapping("/pkgImages")
+    public AjaxResult pkgImages(String taskPath, @RequestParam(required = false)String stationNames)
     {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
         }
-        if(!new File(targetPath).exists()){
-            return new AjaxResult(-1,"目标文件夹不存在","");
-        }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
 
-        List<HashMap> poles = TaskUtils.getRoleInfoByStation(decodeTaskName, stationNames);
-        return new AjaxResult(-1,"操作失败");
+        TaskUtils.saveImagesToLocal(getUserId().toString(),decodeTaskName,stationNames);
+
+        return new AjaxResult(0,"操作成功");
     }
 
+
+    @ApiOperation("下载图像资源包")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "stationName", value = "站区名称", required = true, dataType = "String",  dataTypeClass = String.class),
+    })
+    @GetMapping("/downloadImages")
+    public void downloadImages(String taskPath,String stationName,  HttpServletResponse response, HttpServletRequest request)
+    {
+        try
+        {
+            String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+            String[] taskNames = decodeTaskName.split("\\\\");
+            String taskName = taskNames[taskNames.length-1];
+            String date = taskName.substring(0,10);
+
+
+            String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            FileUtils.setAttachmentResponseHeader(response, stationName+".zip");
+            FileUtils.writeBytes(filePath, response.getOutputStream());
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
 
     @ApiResponse
     @PostMapping("/testWebsocketMsg")

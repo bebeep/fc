@@ -7,7 +7,9 @@ import com.ruoyi.common.utils.CPUDataUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.web.websockt.WebSocketServer;
+import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -22,8 +24,8 @@ import java.util.zip.ZipOutputStream;
 public class TaskUtils {
 
 
-    static final String basePath = "D:\\天窗数据\\"; //存放数据源文件的根目录
-    static final String imagePath = "D:\\图像数据\\"; //存放数图片的根目录
+    public static final String basePath = "D:\\天窗数据\\"; //存放数据源文件的根目录
+    public static final String imagePath = "D:\\图像数据\\"; //存放数图片的根目录
 
 
     /**
@@ -863,53 +865,53 @@ public class TaskUtils {
             conn.close();
             int currIndex = 0,successCount = 0;
             HashMap callBackMap = new HashMap();
-            String currStn = "";
-            File zipFile = null;
-            InputStream input = null;
-            ZipOutputStream zipOut = null;
+            callBackMap.put("totalSize",list.size());
+            String currStn = "",currZipPath = "";
             for (HashMap image:list){
                 String tablePath = taskPath+"\\DB\\C"+image.get("cID")+"_"+image.get("SubDBID")+".subDb";
                 String[] taskNames = taskPath.split("\\\\");
                 String taskName = taskNames[taskNames.length-1];
                 String date = taskName.substring(0,10);
-                image.put("targetPath",imagePath+date+"\\"+taskName+"\\"+image.get("STN")+"\\K"+image.get("KMV")+"_"+image.get("POL"));
+                if (currStn.isEmpty()) {
+                    currStn = image.get("STN").toString();
+                    currZipPath = imagePath+date+"\\"+taskName+"\\"+currStn;
+                }
+
+                image.put("targetPath",currZipPath+"\\K"+image.get("KMV")+"_"+image.get("POL"));
                 image.put("fileName",image.get("TIM")+"_K"+image.get("KMV")+"_"+image.get("POL")+"_"+image.get("cID")+".jpg");
-                File file = saveImages(tablePath,image);
+                if (saveImages(tablePath,image))successCount++;
                 currIndex++;
+
 
                 //生成压缩包
                 if (!currStn.equals(image.get("STN"))){
-                    zipFile = new File(imagePath+date+"\\"+taskName+"\\"+image.get("STN")+".zip");
-                    zipOut = new ZipOutputStream(new FileOutputStream(zipFile));
+                    System.out.println("currZipPath:"+currZipPath);
+                    callBackMap.put("status","正在打包 "+currStn+".zip");
+                    WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
+                    ZipUtils.toZip(currZipPath,true);
+                    currStn = image.get("STN").toString();
+                    currZipPath = imagePath+date+"\\"+taskName+"\\"+currStn;
                 }
-                if (file!=null && file.exists()) {
-                    successCount ++;
-
-                    input = new FileInputStream(file);
-                    zipOut.putNextEntry(new ZipEntry(file.getName()));
-                    zipOut.setComment("www.fc.com");
-                    int temp = 0;
-                    while ((temp = input.read())!=-1){
-                        zipOut.write(temp);
-                    }
-                    input.close();
-                }
-                callBackMap.put("totalSize",list.size());
                 callBackMap.put("currIndex",currIndex);
-                callBackMap.put("progress",String.format("%.2f", ((currIndex * 1.0) / (list.size() * 1.0)) * 100));
+                callBackMap.put("progress",String.format("%.2f", ((currIndex * 1.0) / (list.size() * 1.0)) * 99));
                 callBackMap.put("successSize",successCount);
-                String content = "=================当前进度："+currIndex+"/"+list.size() + "("+String.format("%.2f", ((currIndex * 1.0) / (list.size() * 1.0)) * 100)+")   success:" +successCount;
+                callBackMap.put("status","正在合成图片 "+image.get("fileName"));
                 WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
             }
-            if (zipOut!=null)zipOut.close();
+            callBackMap.put("status","正在打包 "+currStn+".zip");
+            WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
+            ZipUtils.toZip(currZipPath,true);
+            callBackMap.put("progress",100);
+            callBackMap.put("status","图片整理完毕");
+            WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
         } catch ( Exception e ) {
             e.printStackTrace();
         }
     }
-    public static File saveImages(String tablePath,HashMap map){
+    public static boolean saveImages(String tablePath,HashMap map){
         File imageDb = new File(tablePath);
         if (!imageDb.exists() || imageDb.length() == 0){
-            return null;
+            return false;
         }
         Connection conn = null;
         PreparedStatement ps = null;
@@ -934,7 +936,7 @@ public class TaskUtils {
             return saveFileByBytes(imgContent,map.get("targetPath").toString(),map.get("fileName").toString());
         } catch ( Exception e ) {
            e.printStackTrace();
-            return null;
+            return false;
         }
     }
 
@@ -943,7 +945,10 @@ public class TaskUtils {
      * 测试
      */
     public static void main(String[] args) throws FileNotFoundException {
-        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山");
+
+//        System.out.println(enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
+
+        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山,亭子山-全椒");
 //        getTasksByDate("2022-04-01");
 //        getAllTasks("2022");
 
@@ -1039,47 +1044,28 @@ public class TaskUtils {
 
     /**
      * compressImage
-     *
-     * @param imageByte
-     *      Image source array
-     * @param percent  压缩百分比
+     * @param imageByte Image source array
      * @return
      */
-    public static byte[] compressImage(byte[] imageByte, float percent) {
-        byte[] smallImage = null;
-        int width = 0, height = 0;
-
-        if (imageByte == null)
-            return null;
-
-        ByteArrayInputStream byteInput = new ByteArrayInputStream(imageByte);
+    public static byte[] compressImage(byte[] imageByte) {
+        long startTime = System.currentTimeMillis();
+        ByteArrayInputStream intputStream = new ByteArrayInputStream(imageByte);
+        Thumbnails.Builder<? extends InputStream> builder = Thumbnails.of(intputStream).size(200, 200);
         try {
-            Image image = ImageIO.read(byteInput);
-            int w = image.getWidth(null);
-            int h = image.getHeight(null);
-            // adjust weight and height to avoid image distortion
-            double scale = 0;
-            scale = percent / 100f;
-            width = (int) (w * scale);
-            width -= width % 4;
-            height = (int) (h * scale);
-
-            if (scale >= (double) 1)
-                return imageByte;
-
-            BufferedImage buffImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            buffImg.getGraphics().drawImage(image.getScaledInstance(width, height, Image.SCALE_SMOOTH), 0, 0, null);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            ImageIO.write(buffImg, "jpg", out);
-            smallImage = out.toByteArray();
-            return smallImage;
-
+            BufferedImage bufferedImage = builder.asBufferedImage();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(bufferedImage, "png", baos);
+            byte[] byteArray = baos.toByteArray();
+            System.out.println("压缩用时-new："+(System.currentTimeMillis() - startTime) );
+            return byteArray;
         } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        return imageByte;
+        return null;
     }
 
-    public static File saveFileByBytes(byte[] bytes,String filePath, String fileName) {
+    public static boolean saveFileByBytes(byte[] bytes,String filePath, String fileName) {
         BufferedOutputStream bos = null;
         FileOutputStream fos = null;
         File file = null;
@@ -1092,10 +1078,10 @@ public class TaskUtils {
             fos = new FileOutputStream(file);
             bos = new BufferedOutputStream(fos);
             bos.write(bytes);
-            return file;
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return false;
         } finally {
             if (bos != null) {
                 try {
