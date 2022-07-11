@@ -7,6 +7,7 @@ import com.ruoyi.common.utils.CPUDataUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.web.websockt.WebSocketServer;
 import net.coobird.thumbnailator.Thumbnails;
@@ -791,39 +792,16 @@ public class TaskUtils {
 
 
     /**
-     * 缓存图片
-     * @param currPole 当前杆号
+     * 后台任务执行图像打包
      * @return
      */
-    public static TimerTask startCache(final String taskPath,final String currPole)
+    public static TimerTask saveImagesTask(String userId,String taskPath,List<String> stationNames)
     {
         return new TimerTask()
         {
             @Override
             public void run(){
-                String dbFilePath = getDbPath(decodeBase64String(taskPath));
-                Connection conn = null;
-                PreparedStatement ps = null;
-                try {
-                    Class.forName("org.sqlite.JDBC");
-                    conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
-                    conn.setAutoCommit(false);
-
-                    String sql = currPole.isEmpty()?"select * from indexTB limit 1000":"select * from indexTB where Id>=(select min(Id) FROM indexTB where POL='"+currPole+"') limit 1000";
-
-                    ps = conn.prepareStatement(sql);
-                    ResultSet rs = ps.executeQuery();
-                    while ( rs.next() ) {
-                        String tablePath = decodeBase64String(taskPath)+"\\DB\\C"+rs.getInt("cID")+"_"+rs.getInt("SubDBID")+".subDb";
-                        selectImage(tablePath,rs.getLong("imgKey"),false);
-                    }
-                    ps.close();
-                    conn.commit();
-                    conn.close();
-
-                } catch ( Exception e ) {
-                    System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-                }
+                saveImagesToLocal(userId, taskPath, stationNames);
             }
         };
     }
@@ -833,7 +811,7 @@ public class TaskUtils {
      * 按照站区打包文件
      * @return
      */
-    public static void saveImagesToLocal(String userId,String taskPath,String stationNames){
+    public static void saveImagesToLocal(String userId,String taskPath,List<String> stationNames){
         String dbFilePath = getDbPath(taskPath);
         Connection conn = null;
         Statement ps = null;
@@ -842,11 +820,10 @@ public class TaskUtils {
             conn = DriverManager.getConnection("jdbc:sqlite:"+dbFilePath);
             conn.setAutoCommit(false);
 
-            String[] stns = stationNames.split(",");
             ps = conn.createStatement();
             List<HashMap<String,Object>> list = new ArrayList<>();
             HashMap<String,Object> map;
-            for (String stn:stns){
+            for (String stn:stationNames){
                 ResultSet rs = ps.executeQuery("SELECT Id,STN,cID,imgKey,SubDBID,KMV,POL,TIM from indexTB where STN='"+stn.replace(",","")+"'");
                 while ( rs.next() ) {
                     map = new HashMap<>();
@@ -946,9 +923,11 @@ public class TaskUtils {
      */
     public static void main(String[] args) throws FileNotFoundException {
 
-//        System.out.println(enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
 
-        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山,亭子山-全椒");
+        //RDpc5aSp56qX5pWw5o2uXDIwMjItMDMtMDZcMjAyMl8wM18wNl8yMl8xNV8xN1/msqrok4lf5rWm5Y+j56uZLeWFqOakkuermV/kuIvooYw=
+        System.out.println(enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
+
+//        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山,亭子山-全椒");
 //        getTasksByDate("2022-04-01");
 //        getAllTasks("2022");
 
@@ -960,7 +939,7 @@ public class TaskUtils {
 //        getStationsByTask("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1");
 
 
-//        System.out.println("编码："+enCodeStringToBase64("G:\\fc\\4C\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1"));
+//        System.out.println("编码："+enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
 //        System.out.println("解码："+decodeBase64String("RzpcZmNcNENc5aSp56qX5pWw5o2uXDIwMjItMDQtMDFcMjAyMl8wNF8wMV8xNF8wNF8wMV/lj4zpm7fnur9f5Y+M5aKp6ZuG56uZLembt+m6u+W6l+ermV/kuIvooYwx"));
 
 

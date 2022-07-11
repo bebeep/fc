@@ -376,9 +376,9 @@ public class ApiController extends BaseController {
 
 
         byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-        if (isThumb){
-            bb = TaskUtils.compressImage(bb);
-        }
+//        if (isThumb){
+////            bb = TaskUtils.compressImage(bb);
+////        }
         return bb;
     }
 
@@ -1232,6 +1232,7 @@ public class ApiController extends BaseController {
     @ApiImplicitParams({
             @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
             @ApiImplicitParam(name = "stationNames", value = "站区名称，如果多个站区用逗号拼接", required = true, dataType = "String",  dataTypeClass = String.class),
+//            @ApiImplicitParam(name = "isOverride", value = "是否覆盖已经打包好的图像数据",dataType = "Boolean",  dataTypeClass = Boolean.class),
     })
     @ApiResponse
     @PostMapping("/pkgImages")
@@ -1242,7 +1243,25 @@ public class ApiController extends BaseController {
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
 
-        TaskUtils.saveImagesToLocal(getUserId().toString(),decodeTaskName,stationNames);
+        String[] taskNames = decodeTaskName.split("\\\\");
+        String taskName = taskNames[taskNames.length-1];
+        String date = taskName.substring(0,10);
+
+
+        //已经存在的zip则不再重新打包。
+        String[] stationNameArrs = stationNames.split(",");
+        List<String> pkgStns = new ArrayList<>();
+        for (String stationName:stationNameArrs){
+            String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
+            File file = new File(filePath);
+            if (file.exists() && file.length()>0) continue;
+            pkgStns.add(stationName);
+        }
+
+        if (pkgStns.size() == 0)return new AjaxResult(-1,"所选站区图像数据已经存在");
+
+        AsyncManager.me().execute(TaskUtils.saveImagesTask(getUserId().toString(),decodeTaskName,pkgStns));
+//        TaskUtils.saveImagesToLocal(getUserId().toString(),decodeTaskName,pkgStns);
 
         return new AjaxResult(0,"操作成功");
     }
@@ -1265,14 +1284,49 @@ public class ApiController extends BaseController {
 
 
             String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
-            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-            FileUtils.setAttachmentResponseHeader(response, stationName+".zip");
-            FileUtils.writeBytes(filePath, response.getOutputStream());
+            if (new File(filePath).exists()){
+                response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+                FileUtils.setAttachmentResponseHeader(response, stationName+".zip");
+                FileUtils.writeBytes(filePath, response.getOutputStream());
+            }else {
+                response.getWriter().write("-999");
+            }
         }
         catch (Exception e)
         {
             e.printStackTrace();
+            try {
+                response.getWriter().write("-888");
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
+    }
+
+    @ApiOperation("判断图像资源包是否存在")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "taskPath", value = "任务全路径",required = true,  dataType = "String",  dataTypeClass = String.class),
+            @ApiImplicitParam(name = "stationName", value = "站区名称", required = true, dataType = "String",  dataTypeClass = String.class),
+    })
+    @GetMapping("/checkPkgExist")
+    public String checkPkgExist(String taskPath,String stationName)
+    {
+        try
+        {
+            String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
+            String[] taskNames = decodeTaskName.split("\\\\");
+            String taskName = taskNames[taskNames.length-1];
+            String date = taskName.substring(0,10);
+
+
+            String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
+            if (!new File(filePath).exists())return "-999";
+        }
+        catch (Exception e)
+        {
+            return "-888";
+        }
+        return "0";
     }
 
     @ApiResponse
@@ -1280,7 +1334,7 @@ public class ApiController extends BaseController {
     public AjaxResult testWebsocketMsg(String sId,String content)
     {
 
-        TaskUtils.saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山");
+//        TaskUtils.saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山");
         return new AjaxResult(0,"操作成功");
     }
 }
