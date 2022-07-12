@@ -40,9 +40,9 @@ public class WebSocketServer {
         this.sid = sid;
         addOnlineCount();           //在线数加1
         try {
-            sendMessage("conn_success");
+//            sendMessage("conn_success");
             log.info("有新窗口开始监听:" + sid + ",当前在线人数为:" + getOnlineCount());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("websocket IO Exception");
         }
     }
