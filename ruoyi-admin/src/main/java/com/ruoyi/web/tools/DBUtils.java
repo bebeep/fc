@@ -1,5 +1,7 @@
 package com.ruoyi.web.tools;
 
+import Greeter.GreetGrpc;
+
 import java.io.*;
 import java.sql.*;
 
@@ -9,8 +11,9 @@ public class DBUtils {
 
 
     public static void main(String[] args) throws IOException {
-//        addThumb();
-        selectImageThumb("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_02_双雷线_双墩集站-雷麻店站_下行1\\DB");
+//        selectImageThumb("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_02_双雷线_双墩集站-雷麻店站_下行1\\DB");
+
+        GreetGrpc.GreetStub stub = GreetGrpc.newStub(io.grpc.Channel);
 
     }
 
