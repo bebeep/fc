@@ -1243,26 +1243,31 @@ public class ApiController extends BaseController {
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
 
-        String[] taskNames = decodeTaskName.split("\\\\");
-        String taskName = taskNames[taskNames.length-1];
-        String date = taskName.substring(0,10);
 
 
-        //已经存在的zip则不再重新打包。
-        String[] stationNameArrs = stationNames.split(",");
-        List<String> pkgStns = new ArrayList<>();
-        for (String stationName:stationNameArrs){
-            String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
-            File file = new File(filePath);
-            if (file.exists() && file.length()>0) continue;
-            pkgStns.add(stationName);
-        }
+        try {
+            String[] taskNames = decodeTaskName.split("\\\\");
+            String taskName = taskNames[taskNames.length-1];
+            String date = taskName.substring(0,10);
 
-        if (pkgStns.size() == 0)return new AjaxResult(-1,"所选站区图像数据已经存在");
 
-        AsyncManager.me().execute(TaskUtils.saveImagesTask(getUserId().toString(),decodeTaskName,pkgStns));
+            //已经存在的zip则不再重新打包。
+            String[] stationNameArrs = stationNames.split(",");
+            List<String> pkgStns = new ArrayList<>();
+            for (String stationName:stationNameArrs){
+                String filePath = TaskUtils.imagePath + date + "\\"+taskName+"\\"+stationName+".zip";
+                File file = new File(filePath);
+                if (file.exists() && file.length()>0) continue;
+                pkgStns.add(stationName);
+            }
+
+            if (pkgStns.size() == 0)return new AjaxResult(-1,"所选站区图像数据已经存在");
+
+            AsyncManager.me().execute(TaskUtils.saveImagesTask(getUserId().toString(),decodeTaskName,pkgStns));
 //        TaskUtils.saveImagesToLocal(getUserId().toString(),decodeTaskName,pkgStns);
-
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return new AjaxResult(0,"操作成功");
     }
 
