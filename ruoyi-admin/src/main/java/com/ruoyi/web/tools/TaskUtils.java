@@ -806,6 +806,22 @@ public class TaskUtils {
         };
     }
 
+    /**
+     * 后台任务生成缩略图
+     * @return
+     */
+    public static TimerTask saveThumbImage()
+    {
+
+        return new TimerTask()
+        {
+            @Override
+            public void run(){
+                File file = new File(basePath);
+            }
+        };
+    }
+
 
     /**
      * 按照站区打包文件
