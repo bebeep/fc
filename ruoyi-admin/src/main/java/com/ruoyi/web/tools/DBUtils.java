@@ -2,6 +2,8 @@ package com.ruoyi.web.tools;
 
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.spring.SpringUtils;
+import Greeter.GreetGrpc;
+
 import java.io.*;
 import java.sql.*;
 
@@ -13,8 +15,9 @@ public class DBUtils {
 //        addThumb();
 //        selectImageThumb("D:\\天窗数据\\2022-03-05\\2022_03_05_14_04_02_双雷线_双墩集站-雷麻店站_下行1\\DB");
         saveThumbImages(new File(TaskUtils.basePath));
-    }
 
+
+        GreetGrpc.GreetStub stub = GreetGrpc.newStub(io.grpc.Channel);
 
     /**
      * 递归查找所有.subDb文件，根据修改时间确定是否生成缩略图
