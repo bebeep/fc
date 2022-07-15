@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FcThumbMapper">
+    
+    <resultMap type="FcThumb" id="FcThumbResult">
+        <result property="id"    column="id"    />
+        <result property="edittime"    column="editTime"    />
+        <result property="filepath"    column="filePath"    />
+    </resultMap>
+
+    <sql id="selectFcThumbVo">
+        select id, editTime, filePath from fc_thumb
+    </sql>
+
+    <select id="selectFcThumbList" parameterType="FcThumb" resultMap="FcThumbResult">
+        <include refid="selectFcThumbVo"/>
+        <where>  
+            <if test="edittime != null  and edittime != ''"> and editTime = #{edittime}</if>
+            <if test="filepath != null  and filepath != ''"> and filePath = #{filepath}</if>
+        </where>
+    </select>
+    
+    <select id="selectFcThumbById" parameterType="Long" resultMap="FcThumbResult">
+        <include refid="selectFcThumbVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertFcThumb" parameterType="FcThumb" useGeneratedKeys="true" keyProperty="id">
+        insert into fc_thumb
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="edittime != null">editTime,</if>
+            <if test="filepath != null">filePath,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="edittime != null">#{edittime},</if>
+            <if test="filepath != null">#{filepath},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFcThumb" parameterType="FcThumb">
+        update fc_thumb
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="edittime != null">editTime = #{edittime},</if>
+            <if test="filepath != null">filePath = #{filepath},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFcThumbById" parameterType="Long">
+        delete from fc_thumb where id = #{id}
+    </delete>
+
+    <delete id="deleteFcThumbByIds" parameterType="String">
+        delete from fc_thumb where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
