@@ -1,9 +1,5 @@
 package com.ruoyi.web.tools;
 
-import com.ruoyi.common.core.redis.RedisCache;
-import com.ruoyi.common.utils.spring.SpringUtils;
-import Greeter.GreetGrpc;
-import io.grpc.ManagedChannel;
 
 import java.io.*;
 import java.sql.*;
@@ -19,7 +15,7 @@ public class DBUtils {
 
 
         ArchiveClient client = new ArchiveClient("localhost",5555);
-        client.sayHello();
+        client.startResolve("D:\\天窗数据\\2022-03-03\\2022_03_03_22_15_17_沪蓉_浦口站-全椒站_下行\\DB");
     }
 
     /**

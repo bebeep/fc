@@ -1,8 +1,10 @@
 package com.ruoyi.web.tools;
 
+import Greeter.Copyservice;
 import Greeter.GreetGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 
 public class ArchiveClient {
@@ -30,11 +32,28 @@ public class ArchiveClient {
     }
 
 
-    public void sayHello(){
-        Greeter.Copyservice.HelloRequest.Builder builder = Greeter.Copyservice.HelloRequest.newBuilder();
-        builder.setName("fc---");
-        Greeter.Copyservice.HelloRequest request = builder.build();
-        Greeter.Copyservice.HelloReply reply = blockingStub.sayHello(request);
-        System.out.println("reply:"+reply.getMessage());
+    public void startResolve(String path){
+        Greeter.Copyservice.StringMsg.Builder builder = Greeter.Copyservice.StringMsg.newBuilder();
+        builder.setMsg(path);
+        Greeter.Copyservice.StringMsg request = builder.build();
+//        Greeter.Copyservice.StringMsg reply = blockingStub.beginGD(request);
+//        System.out.println("reply:"+reply.getMsg());
+        stub.beginGD(request, new StreamObserver<Copyservice.StringMsg>() {
+            @Override
+            public void onNext(Copyservice.StringMsg stringMsg) {
+                System.out.println("onNext:"+stringMsg.getMsg());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                System.out.println("reply:"+throwable.getMessage());
+            }
+
+            @Override
+            public void onCompleted() {
+                System.out.println("onCompleted:");
+            }
+        });
+
     }
 }
