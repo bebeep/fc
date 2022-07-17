@@ -324,7 +324,7 @@ public class TaskUtils {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-
+            Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection("jdbc:sqlite:"+imageDb);
             conn.setAutoCommit(false);
 
@@ -349,6 +349,42 @@ public class TaskUtils {
 
             //如果可用内存大于1G，则缓存
 //            if (!CPUDataUtils.isMemoryFull())SpringUtils.getBean(RedisCache.class).setCacheObject("fc_imageKey:"+imgKey+(isThumb?"_thumb":""),bb);
+            return imgContent;
+        } catch ( Exception e ) {
+            System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+        }
+        return null;
+    }
+    /**
+     * 查询缩略图
+     * 转成base64
+     * @return
+     */
+
+    public static byte[] selectThumbImage(String tablePath,Long imgKey){
+        File imageDb = new File(tablePath);
+        if (!imageDb.exists() || imageDb.length() == 0){
+            return null;
+        }
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite:"+imageDb);
+            conn.setAutoCommit(false);
+
+            String sql = "SELECT thumbImage from thumbImage where imgKey="+imgKey+";";
+            ps = conn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            byte[] imgContent = null;
+            while ( rs.next() ) {
+                imgContent = rs.getBytes("thumbImage");
+            }
+            rs.close();
+            ps.close();
+            conn.commit();
+            conn.close();
             return imgContent;
         } catch ( Exception e ) {
             System.err.println( e.getClass().getName() + ": " + e.getMessage() );
@@ -808,16 +844,22 @@ public class TaskUtils {
 
     /**
      * 后台任务生成缩略图
+     * 每隔10秒钟执行一次
      * @return
      */
     public static TimerTask saveThumbImage()
     {
-
         return new TimerTask()
         {
             @Override
             public void run(){
-                File file = new File(basePath);
+                DBUtils.saveThumbImages(new File(basePath));
+                try {
+                    Thread.sleep(10000);
+                    run();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         };
     }
@@ -941,7 +983,7 @@ public class TaskUtils {
 
 
         //RDpc5aSp56qX5pWw5o2uXDIwMjItMDMtMDZcMjAyMl8wM18wNl8yMl8xNV8xN1/msqrok4lf5rWm5Y+j56uZLeWFqOakkuermV/kuIvooYw=
-        System.out.println(enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
+        System.out.println(enCodeStringToBase64("D:\\天窗数据\\testThumb"));
 
 //        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山,亭子山-全椒");
 //        getTasksByDate("2022-04-01");

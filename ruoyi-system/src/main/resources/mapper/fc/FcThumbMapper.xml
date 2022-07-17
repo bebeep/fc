@@ -5,13 +5,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.ruoyi.system.mapper.FcThumbMapper">
     
     <resultMap type="FcThumb" id="FcThumbResult">
-        <result property="id"    column="id"    />
         <result property="edittime"    column="editTime"    />
         <result property="filepath"    column="filePath"    />
     </resultMap>
 
     <sql id="selectFcThumbVo">
-        select id, editTime, filePath from fc_thumb
+        select  editTime, filePath from fc_thumb
     </sql>
 
     <select id="selectFcThumbList" parameterType="FcThumb" resultMap="FcThumbResult">
@@ -22,13 +21,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
-    <select id="selectFcThumbById" parameterType="Long" resultMap="FcThumbResult">
+    <select id="selectFcThumbById" parameterType="String" resultMap="FcThumbResult">
         <include refid="selectFcThumbVo"/>
-        where id = #{id}
+        where filepath = #{filepath}
     </select>
         
     <insert id="insertFcThumb" parameterType="FcThumb" useGeneratedKeys="true" keyProperty="id">
-        insert into fc_thumb
+        replace into fc_thumb
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="edittime != null">editTime,</if>
             <if test="filepath != null">filePath,</if>
@@ -39,23 +38,4 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFcThumb" parameterType="FcThumb">
-        update fc_thumb
-        <trim prefix="SET" suffixOverrides=",">
-            <if test="edittime != null">editTime = #{edittime},</if>
-            <if test="filepath != null">filePath = #{filepath},</if>
-        </trim>
-        where id = #{id}
-    </update>
-
-    <delete id="deleteFcThumbById" parameterType="Long">
-        delete from fc_thumb where id = #{id}
-    </delete>
-
-    <delete id="deleteFcThumbByIds" parameterType="String">
-        delete from fc_thumb where id in 
-        <foreach item="id" collection="array" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-    </delete>
 </mapper>

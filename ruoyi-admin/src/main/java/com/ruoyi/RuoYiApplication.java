@@ -1,9 +1,14 @@
 package com.ruoyi;
 
+import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.web.copy.IsUSB;
+import com.ruoyi.web.tools.DBUtils;
+import com.ruoyi.web.tools.TaskUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+
+import java.io.File;
 
 /**
  * 启动程序
@@ -18,6 +23,7 @@ public class RuoYiApplication
         // System.setProperty("spring.devtools.restart.enabled", "false");
         new IsUSB().start();
         SpringApplication.run(RuoYiApplication.class, args);
+        AsyncManager.me().execute(TaskUtils.saveThumbImage());
         System.out.println("(♥◠‿◠)ﾉﾞ  若依启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
                 " .-------.       ____     __        \n" +
                 " |  _ _   \\      \\   \\   /  /    \n" +

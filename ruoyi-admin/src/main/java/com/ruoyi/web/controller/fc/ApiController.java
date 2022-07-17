@@ -364,21 +364,18 @@ public class ApiController extends BaseController {
             return null;
         }
 
-        long times = System.currentTimeMillis();
 
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         String tablePath = decodeTaskName+"\\DB\\C"+cameraId+"_"+subdbId+".subDb";
 
-//        byte[] bb = SpringUtils.getBean(RedisCache.class).getCacheObject("imgKey"+imageId+(isThumb?"_thumb":""));
-//        if (bb == null) {
-//            bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-//        }
 
+        File thumbDb = new File(decodeTaskName+"\\DB\\thumbDB.db");
 
-        byte[] bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
-//        if (isThumb){
-////            bb = TaskUtils.compressImage(bb);
-////        }
+        byte[] bb = null;
+        if (isThumb && thumbDb.exists()){//查询缩略图
+            bb = TaskUtils.selectThumbImage(thumbDb.getAbsolutePath(),imageId);
+        }
+        if (bb == null )bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
         return bb;
     }
 

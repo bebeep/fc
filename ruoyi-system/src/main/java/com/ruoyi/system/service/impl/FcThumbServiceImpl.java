@@ -1,6 +1,5 @@
 package com.ruoyi.system.service.impl;
 
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.system.mapper.FcThumbMapper;
@@ -22,72 +21,28 @@ public class FcThumbServiceImpl implements IFcThumbService
     /**
      * 查询缩略图
      * 
-     * @param id 缩略图主键
      * @return 缩略图
      */
     @Override
-    public FcThumb selectFcThumbById(Long id)
+    public FcThumb selectFcThumbById(String filepath)
     {
-        return fcThumbMapper.selectFcThumbById(id);
+        return fcThumbMapper.selectFcThumbById(filepath);
     }
 
-    /**
-     * 查询缩略图列表
-     * 
-     * @param fcThumb 缩略图
-     * @return 缩略图
-     */
-    @Override
-    public List<FcThumb> selectFcThumbList(FcThumb fcThumb)
-    {
-        return fcThumbMapper.selectFcThumbList(fcThumb);
-    }
 
     /**
      * 新增缩略图
      * 
-     * @param fcThumb 缩略图
      * @return 结果
      */
     @Override
-    public int insertFcThumb(FcThumb fcThumb)
+    public int insertFcThumb(String filepath,String time)
     {
+        FcThumb fcThumb = new FcThumb();
+        if (time == null || time.isEmpty())fcThumb.setEdittime(String.valueOf(System.currentTimeMillis()));
+        else fcThumb.setEdittime(time);
+        fcThumb.setFilepath(filepath);
         return fcThumbMapper.insertFcThumb(fcThumb);
     }
 
-    /**
-     * 修改缩略图
-     * 
-     * @param fcThumb 缩略图
-     * @return 结果
-     */
-    @Override
-    public int updateFcThumb(FcThumb fcThumb)
-    {
-        return fcThumbMapper.updateFcThumb(fcThumb);
-    }
-
-    /**
-     * 批量删除缩略图
-     * 
-     * @param ids 需要删除的缩略图主键
-     * @return 结果
-     */
-    @Override
-    public int deleteFcThumbByIds(Long[] ids)
-    {
-        return fcThumbMapper.deleteFcThumbByIds(ids);
-    }
-
-    /**
-     * 删除缩略图信息
-     * 
-     * @param id 缩略图主键
-     * @return 结果
-     */
-    @Override
-    public int deleteFcThumbById(Long id)
-    {
-        return fcThumbMapper.deleteFcThumbById(id);
-    }
 }
