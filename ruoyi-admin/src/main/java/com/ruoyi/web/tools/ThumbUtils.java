@@ -13,7 +13,7 @@ import java.sql.*;
 
 
 @Component
-public class DBUtils {
+public class ThumbUtils {
 
 
     @Autowired
@@ -56,9 +56,9 @@ public class DBUtils {
                     File thumbFile = new File(f.getParentFile().getAbsolutePath()+"\\thumbDB.db");
                     FcThumb fcThumb = fcThumbService.selectFcThumbById(f.getAbsolutePath());
                     if (!thumbFile.exists() || fcThumb == null || !fcThumb.getEdittime().equals(String.valueOf(f.lastModified()))){
-                        System.out.println("开始生成缩略图:"+thumbFile.getAbsolutePath());
+                        System.out.println("---缩略图任务---开始生成缩略图:"+thumbFile.getAbsolutePath());
                         setImageThumb(f);
-                    }else  System.out.println("已经有缩略图并且是最新的:"+thumbFile.getAbsolutePath());
+                    }else  System.out.println("---缩略图任务---已经有缩略图并且是最新的:"+thumbFile.getAbsolutePath());
 
                 }
 

@@ -2,25 +2,17 @@ package com.ruoyi.web.tools;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ruoyi.common.core.redis.RedisCache;
-import com.ruoyi.common.utils.CPUDataUtils;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.common.utils.spring.SpringUtils;
-import com.ruoyi.framework.manager.AsyncManager;
-import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.web.websockt.WebSocketServer;
 import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public class TaskUtils {
 
@@ -853,7 +845,7 @@ public class TaskUtils {
         {
             @Override
             public void run(){
-                DBUtils.saveThumbImages(new File(basePath));
+                ThumbUtils.saveThumbImages(new File(basePath));
                 try {
                     Thread.sleep(10000);
                     run();
