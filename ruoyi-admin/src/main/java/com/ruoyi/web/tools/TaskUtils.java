@@ -930,6 +930,7 @@ public class TaskUtils {
             ZipUtils.toZip(currZipPath,true);
             callBackMap.put("progress",100);
             callBackMap.put("status","图片整理完毕");
+            callBackMap.put("msgType","1");//1打包图像数据
             WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),userId);
         } catch ( Exception e ) {
             e.printStackTrace();

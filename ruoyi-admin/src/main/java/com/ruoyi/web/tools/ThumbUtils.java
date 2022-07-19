@@ -33,7 +33,7 @@ public class ThumbUtils {
 
 
         ArchiveClient client = new ArchiveClient("localhost",5555);
-        client.startResolve("D:\\天窗数据\\2022-03-03\\2022_03_03_22_15_17_沪蓉_浦口站-全椒站_下行\\DB");
+        client.startResolve("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行\\DB");
     }
 
     /**

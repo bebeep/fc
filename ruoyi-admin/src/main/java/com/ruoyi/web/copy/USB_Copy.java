@@ -1,8 +1,13 @@
 package com.ruoyi.web.copy;
 
 
-
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class USB_Copy{
 
@@ -32,7 +37,6 @@ public class USB_Copy{
             sysFile.mkdirs(); //如果目标文件夹不存在，创建文件夹
         }
 
-        //System.out.println("复制的新文件夹为："+sysFilePath);
 
         try {
             bis = new BufferedInputStream(new FileInputStream(file));
