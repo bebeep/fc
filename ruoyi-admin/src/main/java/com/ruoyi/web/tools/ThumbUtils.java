@@ -1,6 +1,7 @@
 package com.ruoyi.web.tools;
 
 
+import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.system.domain.FcThumb;
 import com.ruoyi.system.service.IFcThumbService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class ThumbUtils {
 //        saveThumbImages(new File(TaskUtils.basePath));
 
 
-        ArchiveClient client = new ArchiveClient("localhost",5555);
+        ArchiveClient client = new ArchiveClient("localhost",5000);
         client.startResolve("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行\\DB");
     }
 

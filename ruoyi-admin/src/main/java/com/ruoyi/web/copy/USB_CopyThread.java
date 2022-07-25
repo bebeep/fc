@@ -2,6 +2,7 @@ package com.ruoyi.web.copy;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.ruoyi.web.tools.ArchiveClient;
 import com.ruoyi.web.websockt.WebSocketServer;
 
 import java.io.File;
@@ -59,6 +60,15 @@ public class USB_CopyThread extends Thread {
 
         long etime = System.currentTimeMillis();
         System.out.println("结束复制:"+(etime-stime)/1000+"秒");
+
+
+        callBackMap.put("progress","100");
+        callBackMap.put("status","数据拷贝完成!");
+        callBackMap.put("msgType","2");//1打包图像数据 2拷贝文件
+        WebSocketServer.sendInfo(JSONObject.toJSON(callBackMap).toString(),"");
+
+        ArchiveClient client = new ArchiveClient("localhost",5000);
+        client.startResolve(filePath);
 
     }
 
