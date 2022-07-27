@@ -4,7 +4,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.system.service.IFcThumbService;
+import com.ruoyi.web.copy.DomReadXML;
 import com.ruoyi.web.websockt.WebSocketServer;
+import lombok.SneakyThrows;
 import net.coobird.thumbnailator.Thumbnails;
 
 import javax.imageio.ImageIO;
@@ -13,12 +16,14 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class TaskUtils {
 
-
-    public static final String basePath = "D:\\天窗数据\\"; //存放数据源文件的根目录
-    public static final String imagePath = "D:\\图像数据\\"; //存放数图片的根目录
+    public static final DomReadXML domReadXML = new DomReadXML();
+    public static final String basePath = domReadXML.readXml().get(2); //存放数据源文件的根目录
+    public static final String imagePath = domReadXML.readXml().get(3); //存放数图片的根目录
 
 
     /**
@@ -839,15 +844,24 @@ public class TaskUtils {
      * 每隔10秒钟执行一次
      * @return
      */
+
+    private static BlockingQueue<File> getPath = new LinkedBlockingDeque();//存放查出来的byte图片二进制数组
+    private static BlockingQueue<ElementByte> queueByte = new LinkedBlockingDeque(100);//存放查出来的byte图片二进制数组
+    //private static BlockingQueue<Long> queueID = new LinkedBlockingDeque();//存放ID
+    private static BlockingQueue<ElementByte> GetImgYs = new LinkedBlockingDeque<>(100);//保存压缩好的缩略图
+
+
+
     public static TimerTask saveThumbImage()
     {
         return new TimerTask()
         {
             @Override
             public void run(){
-                ThumbUtils.saveThumbImages(new File(basePath));
+                ThumbUtils.saveThumbImages(new File(basePath),getPath);
+                YS();
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(10000000);
                     run();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -855,7 +869,26 @@ public class TaskUtils {
             }
         };
     }
+    @SneakyThrows
+    public static void YS(){
+        System.out.println("---缩略图任务---开始生成缩略图");
+        System.out.println("已有路径"+getPath.take());
 
+        GetByuteImg getByuteImg = new GetByuteImg(getPath,queueByte);
+        getByuteImg.start();
+        //压缩
+        CompressionImg c1 = new CompressionImg(GetImgYs,queueByte);
+        c1.start();
+        CompressionImg c2 = new CompressionImg(GetImgYs,queueByte);
+        c2.start();
+        CompressionImg c3 = new CompressionImg(GetImgYs,queueByte);
+        c3.start();
+        CompressionImg c4 = new CompressionImg(GetImgYs,queueByte);
+        c4.start();
+        //插入图片
+        SaveByteImg saveByteImg = new SaveByteImg(getPath.take().getParentFile().getAbsolutePath(),GetImgYs);
+        saveByteImg.start();
+    }
 
     /**
      * 按照站区打包文件

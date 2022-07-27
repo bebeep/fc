@@ -1,26 +1,23 @@
 package com.ruoyi.web.tools;
 
 
-import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.system.domain.FcThumb;
 import com.ruoyi.system.service.IFcThumbService;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
-import java.sql.*;
+import java.util.concurrent.BlockingQueue;
 
 
 @Component
 public class ThumbUtils {
-
-
     @Autowired
     private IFcThumbService service;
 
-    private static IFcThumbService fcThumbService;
+    static IFcThumbService fcThumbService;
 
     @PostConstruct
     public void init() {
@@ -41,14 +38,15 @@ public class ThumbUtils {
      * 递归查找所有.subDb文件，根据修改时间确定是否生成缩略图
      * @param file
      */
-    public static void saveThumbImages(File file) {
+    @SneakyThrows
+    public static void saveThumbImages(File file,BlockingQueue<File> getPath) {
         File flist[] = file.listFiles();
         if (flist == null || flist.length == 0) {
             return;
         }
         for (File f : flist) {
             if (f.isDirectory()) { //文件夹
-                saveThumbImages(f);
+                saveThumbImages(f,getPath);
             } else { //文件
                 if (f.getAbsolutePath().endsWith(".subDb")){//所有的图片文件
                     //先从数据库查找该路径的subDB是否已经生成缩略图，
@@ -57,21 +55,38 @@ public class ThumbUtils {
                     File thumbFile = new File(f.getParentFile().getAbsolutePath()+"\\thumbDB.db");
                     FcThumb fcThumb = fcThumbService.selectFcThumbById(f.getAbsolutePath());
                     if (!thumbFile.exists() || fcThumb == null || !fcThumb.getEdittime().equals(String.valueOf(f.lastModified()))){
-                        System.out.println("---缩略图任务---开始生成缩略图:"+thumbFile.getAbsolutePath());
-                        setImageThumb(f);
-                    }else  System.out.println("---缩略图任务---已经有缩略图并且是最新的:"+thumbFile.getAbsolutePath());
+                        getPath.put(f);
+                        //setImageThumb(f);
+                        //获取原图
+
+                    }else {
+                        System.out.println("---缩略图任务---已经有缩略图并且是最新的:"+thumbFile.getAbsolutePath());
+                    }
 
                 }
 
             }
         }
+
+
+
     }
+
+
+    /**
+
+
+
+
+
+     */
 
 
     /**
      * 传入文件夹路径，将该文件夹下的所有subdb文件遍历，将图像数据取出来压缩后再保存到新的db文件；
      * @return
      */
+    /**
     private static boolean setImageThumb(File file){
         if (!file.exists()){
             return false;
@@ -138,6 +153,6 @@ public class ThumbUtils {
         }
     }
 
-
+**/
 
 }
