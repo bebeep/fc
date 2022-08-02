@@ -1009,7 +1009,7 @@ public class TaskUtils {
 
 
         //RDpc5aSp56qX5pWw5o2uXDIwMjItMDMtMDZcMjAyMl8wM18wNl8yMl8xNV8xN1/msqrok4lf5rWm5Y+j56uZLeWFqOakkuermV/kuIvooYw=
-        System.out.println(enCodeStringToBase64("D:\\天窗数据\\testThumb"));
+        System.out.println(enCodeStringToBase64("D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行"));
 
 //        saveImagesToLocal("1111","D:\\天窗数据\\2022-03-06\\2022_03_06_22_15_17_沪蓉_浦口站-全椒站_下行","浦口站,浦口-亭子山,亭子山-全椒");
 //        getTasksByDate("2022-04-01");

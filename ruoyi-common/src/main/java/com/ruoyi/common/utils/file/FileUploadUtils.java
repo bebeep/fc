@@ -3,6 +3,7 @@ package com.ruoyi.common.utils.file;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -103,10 +104,37 @@ public class FileUploadUtils
 
         assertAllowed(file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
 
-        String absPath = getAbsoluteFile(path+"\\缺陷图片", imgKey+".jpg").getAbsolutePath();
+        //重新生成缺陷文件名称 日期+160+4位序号 20220629 160 0001
+        File parentFile = new File(path+"\\缺陷图片");
+        if (!parentFile.exists())parentFile.mkdirs();
+        File[] files = parentFile.listFiles();
+
+
+        String realFileName;
+        if (files == null || files.length == 0) {
+            realFileName = DateUtils.getDate().replaceAll("-","")+"1600001.jpg";
+        }else {
+            String firstFileName = files[0].getName();
+            String endFileName = files[files.length-1].getName();
+            int firstIndex = Integer.parseInt(firstFileName.substring(firstFileName.length()-8,firstFileName.length()-4));
+            int endIndex = Integer.parseInt(endFileName.substring(endFileName.length()-8,endFileName.length()-4));
+            int resultIndex = Math.max(firstIndex,endIndex);
+            realFileName = DateUtils.getDate().replaceAll("-","")+"160"+formatFileName(resultIndex+1)+".jpg";
+        }
+//        String absPath = getAbsoluteFile(path+"\\缺陷图片", imgKey+".jpg").getAbsolutePath();
+        String absPath = getAbsoluteFile(path+"\\缺陷图片", realFileName).getAbsolutePath();
         file.transferTo(Paths.get(absPath));
         return absPath;
     }
+
+
+    private static String formatFileName(int index){
+        if (index<10) return "000"+index;
+        else if (index < 100) return "00"+index;
+        else if (index < 1000)return "0"+index;
+        else return String.valueOf(index);
+    }
+
 
     /**
      * 文件上传
