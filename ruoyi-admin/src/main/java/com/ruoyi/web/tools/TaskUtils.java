@@ -22,8 +22,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class TaskUtils {
 
     public static final DomReadXML domReadXML = new DomReadXML();
-    public static final String basePath = domReadXML.readXml().get(2); //存放数据源文件的根目录
-    public static final String imagePath = domReadXML.readXml().get(3); //存放数图片的根目录
+    public static final String basePath = "D:\\天窗数据"; //存放数据源文件的根目录
+    public static final String imagePath = "D:\\图像数据"; //存放数图片的根目录
+//    public static final String basePath = domReadXML.readXml().get(2); //存放数据源文件的根目录
+//    public static final String imagePath = domReadXML.readXml().get(3); //存放数图片的根目录
 
 
     /**

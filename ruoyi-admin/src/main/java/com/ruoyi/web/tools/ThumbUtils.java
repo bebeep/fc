@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.concurrent.BlockingQueue;
 
@@ -154,5 +156,62 @@ public class ThumbUtils {
     }
 
 **/
+
+
+
+    /**
+     * 逆时针旋转90度
+     * @return
+     */
+    public static byte[] rotate90AW(byte[] bytes)
+    {
+        try {
+            BufferedImage bi = ImageIO.read(new ByteArrayInputStream(bytes));
+            int width = bi.getWidth();
+            int height = bi.getHeight();
+
+            BufferedImage biFlip = new BufferedImage(height, width, bi.getType());
+
+            for (int i = 0; i < width; i++)
+                for (int j = 0; j < height; j++)
+                    biFlip.setRGB(j, width - 1 - i, bi.getRGB(i, j));
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(biFlip, "jpg", baos);
+            baos.flush();
+            return baos.toByteArray();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 顺时针旋转90度
+     * @return
+     */
+    public static byte[] rotate90CW(byte[] bytes)
+    {
+        try {
+            BufferedImage bi = ImageIO.read(new ByteArrayInputStream(bytes));
+            int width = bi.getWidth();
+            int height = bi.getHeight();
+
+            BufferedImage biFlip = new BufferedImage(height, width, bi.getType());
+
+            for (int i = 0; i < width; i++)
+                for (int j = 0; j < height; j++)
+                    biFlip.setRGB(height - 1 - j, i, bi.getRGB(i, j));
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(biFlip, "jpg", baos);
+            baos.flush();
+            return baos.toByteArray();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
 
 }
