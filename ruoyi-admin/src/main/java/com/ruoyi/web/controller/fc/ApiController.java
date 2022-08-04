@@ -26,6 +26,7 @@ import com.ruoyi.system.service.*;
 import com.ruoyi.web.controller.tool.ExportRecord;
 import com.ruoyi.web.controller.tool.ExportRecordImage;
 import com.ruoyi.web.tools.TaskUtils;
+import com.ruoyi.web.tools.ThumbUtils;
 import com.ruoyi.web.websockt.WebSocketServer;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -376,6 +377,11 @@ public class ApiController extends BaseController {
             bb = TaskUtils.selectThumbImage(thumbDb.getAbsolutePath(),imageId);
         }
         if (bb == null )bb = TaskUtils.selectImage(tablePath,imageId,isThumb);
+
+        if (!isThumb && (String.valueOf(imageId).endsWith("31")||String.valueOf(imageId).endsWith("32")
+            ||String.valueOf(imageId).endsWith("33")||String.valueOf(imageId).endsWith("34"))){//吊弦 顺时针旋转90度
+            bb = ThumbUtils.rotate90CW(bb);
+        }
         return bb;
     }
 
@@ -390,7 +396,8 @@ public class ApiController extends BaseController {
         if (bb == null){
             bb= TaskUtils.selectImage("D:\\天窗数据\\2022-04-01\\2022_04_01_14_04_01_双雷线_双墩集站-雷麻店站_下行1\\DB\\C1_1.subDb",22030622351037301L,isThumb);
         }
-        return bb;
+//        return bb;
+        return ThumbUtils.rotate90CW(bb);
     }
 
 
