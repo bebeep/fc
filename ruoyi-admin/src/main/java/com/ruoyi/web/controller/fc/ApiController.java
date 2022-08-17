@@ -546,15 +546,19 @@ public class ApiController extends BaseController {
 
 
     @ApiOperation("删除某条缺陷信息")
-    @ApiImplicitParam(name = "id", value = "缺陷记录id", required = true, dataType = "Long",  dataTypeClass = Long.class)
+    @ApiImplicitParam(name = "ids", value = "缺陷记录id集合,批量删除时用,拼接", required = true, dataType = "String",  dataTypeClass = String.class)
     @PostMapping("/deleteDefectInfo")
     @ResponseBody
-    public AjaxResult deleteDefectInfo(int  id) {
+    public AjaxResult deleteDefectInfo(String  ids) {
         try{
-            int result = fcRecordService.deleteFcRecordById(id);
-            if (result == 1)return new AjaxResult(0,"删除成功","");
-        }catch (Exception e){
-        }
+            String[] idList = ids.split(",");
+
+            for (String id:idList){
+                if (id.isEmpty())continue;
+                fcRecordService.deleteFcRecordById(Integer.parseInt(id));
+            }
+            return new AjaxResult(0,"删除成功","");
+        }catch (Exception e){}
         return new AjaxResult(-1,"删除失败","");
     }
 
