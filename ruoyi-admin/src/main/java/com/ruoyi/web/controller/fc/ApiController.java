@@ -288,17 +288,21 @@ public class ApiController extends BaseController {
         @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class),
         @ApiImplicitParam(name = "pole", value = "杆号", required = true, dataType = "String",  dataTypeClass = String.class),
         @ApiImplicitParam(name = "cameraTypeId", value = "相机分类id",  dataType = "Int",  dataTypeClass = Integer.class),
+        @ApiImplicitParam(name = "stn", value = "站区名字",  dataType = "String",  dataTypeClass = String.class),
     })
     @ApiResponse
     @PostMapping("/getImages")
     @ResponseBody
-    public AjaxResult getImages(String taskPath,String pole, @RequestParam(value = "cameraTypeId",required = false,defaultValue = "0")int cameraTypeId)
+    public AjaxResult getImages(String taskPath,String pole, @RequestParam(value = "cameraTypeId",required = false,defaultValue = "0")int cameraTypeId,String stn)
     {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
         }
         if(pole.isEmpty()){
             return new AjaxResult(-1,"杆号不能为空","");
+        }
+        if(stn.isEmpty()){
+            return new AjaxResult(-1,"站区不能为空","");
         }
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
 
@@ -311,7 +315,7 @@ public class ApiController extends BaseController {
             }
         }else cameraList = allCameraList;
 
-        List<HashMap<String,Object>> list = TaskUtils.getImages(decodeTaskName,pole);
+        List<HashMap<String,Object>> list = TaskUtils.getImages(decodeTaskName,pole,stn);
         //重组数据，杆号下分相机分类-相机列表-图片列表
         List<HashMap<String,Object>> resultList = new ArrayList<>();
         for (HashMap cameraType:cameraList){

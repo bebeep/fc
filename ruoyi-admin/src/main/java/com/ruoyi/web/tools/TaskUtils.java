@@ -265,7 +265,7 @@ public class TaskUtils {
      * 根据杆号获取所有图片信息
      * @return
      */
-    public static List<HashMap<String,Object>> getImages(String taskPath,String pole){
+    public static List<HashMap<String,Object>> getImages(String taskPath,String pole,String stn){
         String dbFilePath = getDbPath(taskPath);
         Connection conn = null;
         PreparedStatement ps = null;
@@ -275,7 +275,7 @@ public class TaskUtils {
             conn.setAutoCommit(false);
 
             //查询某一杆号下的所有信息
-            String sql = "SELECT Id,POL,KMV,cID,imgKey,DxInd,TIM,SubDBID from indexTB where POL='"+pole+"';";
+            String sql = "SELECT Id,POL,KMV,cID,imgKey,DxInd,TIM,SubDBID,STN from indexTB where POL='"+pole+"' and STN='"+stn+"';";
             ps = conn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
