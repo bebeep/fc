@@ -68,9 +68,9 @@ public class FcScanStatusServiceImpl implements IFcScanStatusService
     }
 
     @Override
-    public int updateFcScanPoles(Long userId,String pole) {
+    public int updateFcScanPoles(Long userId,String pole,String currTask) {
         if (userId == 0 || pole == null || pole.isEmpty()) return 0;
-        return fcScanStatusMapper.updateFcScanPoles(userId.toString(),pole);
+        return fcScanStatusMapper.updateFcScanPoles(userId.toString(),pole,currTask);
     }
 
 

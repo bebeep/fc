@@ -52,10 +52,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
         
     <insert id="insertFcScanStatus" parameterType="FcScanStatus" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO fc_scan_status (userid,scanedPoles)
-        SELECT #{userid},''
+        INSERT INTO fc_scan_status (userid,currTask)
+        SELECT #{userid},#{currTask}
         from DUAL
-        where not exists(select userid from fc_scan_status where userId=#{userid});
+        where not exists(select userid,currTask from fc_scan_status where userId=#{userid} and currTask=#{currTask});
     </insert>
 
     <update id="updateFcScanStatus" parameterType="FcScanStatus">
@@ -79,7 +79,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <update id="updateFcScanPoles" parameterType="String">
-        update fc_scan_status set scanedPoles =concat(scanedPoles,',',#{pole}) where locate(#{pole},scanedPoles)=0 AND userId = #{userId}
+        update fc_scan_status set scanedPoles =concat(scanedPoles,',',#{pole}) where locate(#{pole},scanedPoles)=0 AND userId = #{userId} And currTask=#{currTask}
     </update>
 
     <delete id="deleteFcScanStatusById" parameterType="Long">

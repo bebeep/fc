@@ -45,7 +45,7 @@ public interface FcScanStatusMapper
     public int updateFcScanStatus(FcScanStatus fcScanStatus);
 
 
-    public int updateFcScanPoles(@Param(value="userId")String userId, @Param(value="pole")String pole);
+    public int updateFcScanPoles(@Param(value="userId")String userId, @Param(value="pole")String pole,@Param(value = "currTask") String currTask);
 
     /**
      * 删除状态记录

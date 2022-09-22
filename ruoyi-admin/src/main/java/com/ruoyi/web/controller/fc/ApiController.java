@@ -98,11 +98,6 @@ public class ApiController extends BaseController {
         try
         {
             LoginUser loginUser = loginService.login(username, password);
-
-            try{
-                //初始化浏览历史
-                scanStatusService.insertFcScanStatus(new FcScanStatus(loginUser.getUserId()));
-            }catch (Exception e){}
             HashMap map = new HashMap();
             map.put("token",loginUser.getToken());
             map.put("userId",loginUser.getUserId());
@@ -202,6 +197,14 @@ public class ApiController extends BaseController {
         if(taskPath.isEmpty()){
             return new AjaxResult(-1,"任务路径不能为空","");
         }
+
+        try{
+            //初始化浏览历史
+            FcScanStatus status = new FcScanStatus(getUserId());
+            status.setCurrtask(taskPath);
+            scanStatusService.insertFcScanStatus(status);
+        }catch (Exception e){}
+
         String decodeTaskName = TaskUtils.decodeBase64String(taskPath.replaceAll(" ","+"));
         return new AjaxResult(0,"操作成功",TaskUtils.getStationsByTask(decodeTaskName));
     }
@@ -1162,7 +1165,7 @@ public class ApiController extends BaseController {
         try
         {
 
-            scanStatusService.updateFcScanPoles(getUserId(),jsonParam.getString("currPole"));//单独追加杆号
+            scanStatusService.updateFcScanPoles(getUserId(),jsonParam.getString("currPole"),jsonParam.getString("currTask"));//单独追加杆号
 
             FcScanStatus status = new FcScanStatus(
                     getUserId(),
@@ -1189,14 +1192,16 @@ public class ApiController extends BaseController {
 
 
     @ApiOperation("获取浏览记录-建议在登录成功之后调用")
+    @ApiImplicitParam(name = "taskPath", value = "任务全路径", required = true, dataType = "String",  dataTypeClass = String.class)
     @ApiResponse
     @GetMapping("/getScanHistory")
-    public AjaxResult getScanHistory()
+    public AjaxResult getScanHistory(String taskPath )
     {
         try
         {
-
-            List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(new FcScanStatus(getUserId()));
+            FcScanStatus s = new FcScanStatus(getUserId());
+            s.setCurrtask(taskPath);
+            List<FcScanStatus> list = scanStatusService.selectFcScanStatusList(s);
             if (list!=null && list.size()>0){
                 FcScanStatus status = list.get(0);
 
